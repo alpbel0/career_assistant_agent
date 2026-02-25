@@ -16,7 +16,7 @@ Career Agent (openai/gpt-4o-mini)
   → Memory (history.json - per employer)
   → Draft response
     ↓
-Judge Agent (minimax/minimax-m2.5)
+Judge Agent (google/gemini-2.0-flash-001)
   → 4 metrics: Truthfulness, Robustness, Helpfulness, Tone
   → JSON output
     ↓
@@ -66,7 +66,7 @@ career-agent/
 |-----------|------------|-------|
 | LLM Provider | OpenRouter | ✅ Tamamlandı |
 | Career Agent | `openai/gpt-4o-mini` | ✅ Faz 2.1 tamamlandı |
-| Judge Agent | `minimax/minimax-m2.5` | ⏳ Faz 2.2 sonraki |
+| Judge Agent | `google/gemini-2.0-flash-001` | ✅ Faz 2.2 tamamlandı |
 | Bot | Telegram Bot API (`python-telegram-bot`) | ⏳ Faz 3 |
 | Backend | Python + FastAPI | ⏳ Faz 5 |
 | Frontend | React + Vite + TailwindCSS + Recharts | ⏳ Faz 5 |
@@ -155,7 +155,7 @@ OPENROUTER_API_KEY=
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_CHAT_ID=
 CAREER_AGENT_MODEL=openai/gpt-4o-mini
-JUDGE_AGENT_MODEL=minimax/minimax-m2.5
+JUDGE_AGENT_MODEL=google/gemini-2.0-flash-001
 APPROVAL_THRESHOLD=4.0
 ```
 
@@ -172,7 +172,7 @@ APPROVAL_THRESHOLD=4.0
 | Faz | Durum |
 |-----|-------|
 | Faz 1 — Temel Altyapı | ✅ Tamamlandı |
-| Faz 2 — Agent'lar | 🔄 Devam ediyor (2.1 ✅, 2.2 ⏳) |
+| Faz 2 — Agent'lar | 🔄 Devam ediyor (2.1 ✅, 2.2 ✅) |
 | Faz 3 — Telegram Bot | ⏳ Bekliyor |
 | Faz 4 — EvalOps & Loglama | ⏳ Bekliyor |
 | Faz 5 — Dashboard | ⏳ Bekliyor |
@@ -187,7 +187,9 @@ APPROVAL_THRESHOLD=4.0
 - ✅ CV (3545 karakter) → 8 chunk olarak ChromaDB'ye indexlendi
 - ✅ `.gitignore`'da hassas data dosyaları hariç tutuluyor
 
-### Faz 2 Tamamlananlar (2.1 - Career Agent):
+### Faz 2 Tamamlananlar:
+
+#### 2.1 - Career Agent:
 - ✅ `agent/career_agent.py` — Ana CareerAgent sınıfı
 - ✅ `agent/prompts/career_prompt.txt` — Kapsamlı sistem promptu
 - ✅ Async OpenRouter API bağlantısı (httpx)
@@ -199,11 +201,22 @@ APPROVAL_THRESHOLD=4.0
 - ✅ 12 unit test (%100 coverage)
 - ✅ Docker container içinde test edildi
 
-### Şu anki sonraki adım (Faz 2.2):
-1. Judge Agent'ı implement et (`agent/evaluator_agent.py`)
-2. Judge prompt'ını yaz (`prompts/evaluator_prompt.txt`)
-3. 4 metrik için JSON çıktısı ürettir
-4. Revizyon loop'unu test et (max 3 iterasyon)
+#### 2.2 - Judge Agent:
+- ✅ `agent/evaluator_agent.py` — EvaluatorAgent sınıfı
+- ✅ `agent/prompts/evaluator_prompt.txt` — Judge sistem promptu
+- ✅ Async OpenRouter API bağlantısı (gemini-2.0-flash-001)
+- ✅ 4 metrik değerlendirme (1-5 scale): Truthfulness, Robustness, Helpfulness, Tone
+- ✅ JSON output (markdown tolerant parsing)
+- ✅ `APPROVAL_THRESHOLD=4.0` karşılaştırması
+- ✅ Intervention detection (salary, legal, out-of-domain, vb.)
+- ✅ 15 unit test (%100 coverage)
+- ✅ Docker container içinde test edildi
+- ✅ Gerçek API ile test edildi
+
+### Şu anki sonraki adım (Faz 3):
+1. Telegram bot'unu implement et (`bot/telegram_bot.py`)
+2. Admin komutlarını ekle (/reply, /update_cv, /show_cv, /status)
+3. Admin bildirimleri (intervention, approval)
 
 ## 🎓 Proje Türü
 

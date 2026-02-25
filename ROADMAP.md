@@ -58,22 +58,24 @@
 - [x] 12 unit test (%100 coverage)
 - [x] Agent test edildi: mülakat daveti, professionalize instruction
 
-### 2.2 Judge Agent (`agent/evaluator_agent.py`)
-- [ ] `JUDGE_AGENT_MODEL=minimax/minimax-m2.5` ile bağlantıyı test et
-- [ ] `prompts/evaluator_prompt.txt` sistem promptunu yaz
-- [ ] 4 metrik için JSON çıktısı ürettir:
-  - [ ] `truthfulness_score`
-  - [ ] `robustness_score`
-  - [ ] `helpfulness_score`
-  - [ ] `tone_score`
-  - [ ] `overall_score`
-  - [ ] `is_approved`
-  - [ ] `trigger_human_intervention`
-  - [ ] `intervention_reason`
-  - [ ] `feedback`
-- [ ] `APPROVAL_THRESHOLD=4.0` karşılaştırmasını yaz
-- [ ] Max 3 iterasyon döngüsünü yaz (revizyon loop'u)
-- [ ] Judge çıktısını parse eden ve hata yönetimi yapan fonksiyonu yaz
+### 2.2 Judge Agent (`agent/evaluator_agent.py`) ✅ TAMAMLANDI
+- [x] `JUDGE_AGENT_MODEL=google/gemini-2.0-flash-001` ile bağlantıyı test et
+- [x] `prompts/evaluator_prompt.txt` sistem promptunu yaz
+- [x] 4 metrik için JSON çıktısı ürettir:
+  - [x] `truthfulness_score`
+  - [x] `robustness_score`
+  - [x] `helpfulness_score`
+  - [x] `tone_score`
+  - [x] `overall_score`
+  - [x] `is_approved`
+  - [x] `trigger_human_intervention`
+  - [x] `intervention_reason`
+  - [x] `feedback`
+- [x] `APPROVAL_THRESHOLD=4.0` karşılaştırmasını yaz
+- [x] JSON parsing (markdown tolerant)
+- [x] Intervention detection (keyword-based fallback)
+- [x] 15 unit test (%100 coverage)
+- [x] Docker container içinde test edildi
 
 ---
 
