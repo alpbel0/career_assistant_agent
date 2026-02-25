@@ -14,7 +14,9 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 # Cosine distance threshold — bu değerin ÜSTÜNDE = konu CV'de yok
-RELEVANCE_THRESHOLD = 0.80
+# 0 = aynı, 2 = tamamen zıt. 1.4 = gerçekten alakasız (spor, politika vb.)
+# Genel career sorular (kendinizden bahsedin, merhaba) ~0.9-1.2 aralığında
+RELEVANCE_THRESHOLD = 1.4
 
 
 def get_cv_context(query: str = "") -> str:
