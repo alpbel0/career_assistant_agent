@@ -379,13 +379,21 @@ Rules:
 A career assistant bot automatically responds to employer messages on behalf of a job candidate.
 Some messages require HUMAN intervention and should NOT be handled automatically.
 
-Intervention is needed when:
-- salary_negotiation: Message discusses salary, compensation, pay, equity, benefits amounts, bonuses
-- legal_question: Message mentions contracts, NDA, legal clauses, agreements to sign, terms
-- ambiguous_offer: Message contains a job offer that needs clarification or acceptance/rejection decision
-- off_topic: Message is spam, completely unrelated to recruitment, or seems malicious
+Intervention is ONLY needed for these specific cases:
+- salary_negotiation: Message explicitly discusses specific salary numbers, compensation amounts, equity percentages, or bonus amounts
+- legal_question: Message mentions contracts, NDA, legal clauses, or documents to sign
+- ambiguous_offer: Message contains a formal job offer requiring acceptance or rejection
 
-Normal questions about experience, skills, availability, interview scheduling, job details = NO intervention.
+NEVER flag as intervention (these are normal career questions):
+- "Tell me about yourself" / "Kendinizden bahsedin" — standard intro question
+- Questions about skills, experience, background, education
+- Interview invitations or scheduling
+- Questions about availability, start date
+- Technical questions about the candidate's expertise
+- General recruitment conversation in ANY language (Turkish, English, etc.)
+- off_topic or unclear messages — just return false, the bot can handle it
+
+When in doubt, return false. Only return true for clear salary/legal/offer cases.
 
 Return ONLY valid JSON, no markdown, no explanation:
 {"needs_intervention": true, "reason": "salary_negotiation"}
