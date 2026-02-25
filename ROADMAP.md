@@ -44,7 +44,7 @@
 
 ---
 
-## 2. 🔄 FAZ 2 — Agent'lar — DEVAM EDİYOR
+## 2. ✅ FAZ 2 — Agent'lar — TAMAMLANDI
 
 ### 2.1 Career Agent (`agent/career_agent.py`) ✅ TAMAMLANDI
 - [x] OpenRouter API bağlantısını kur (async httpx)
@@ -55,6 +55,7 @@
 - [x] Human talimatını profesyonelleştiren fonksiyon (`/reply` komutu için)
 - [x] Retry logic (3x, exponential backoff)
 - [x] Graceful fallback (API hatasında Türkçe mesaj)
+- [x] `feedback` parametresi ile revizyon desteği
 - [x] 12 unit test (%100 coverage)
 - [x] Agent test edildi: mülakat daveti, professionalize instruction
 
@@ -79,44 +80,44 @@
 
 ---
 
-## 3. ✅ FAZ 3 — Telegram Bot
+## 3. 🔄 FAZ 3 — Telegram Bot — TAMAMLANDI
 
-### 3.1 Temel Bot (`bot/telegram_bot.py`)
-- [ ] `python-telegram-bot` kütüphanesini kur
-- [ ] Bot token ile bağlantıyı test et
-- [ ] Gelen mesajı yakalayan handler'ı yaz
-- [ ] Admin kontrolü ekle (`TELEGRAM_CHAT_ID` doğrulaması)
-- [ ] İşveren mesajını → Career Agent'a gönder → Judge'dan geçir → cevabı işverene ilet
+### 3.1 Temel Bot (`bot/telegram_bot.py`) ✅ TAMAMLANDI
+- [x] `CareerAssistantBot` sınıfı oluşturuldu
+- [x] `python-telegram-bot>=21.0` ile entegrasyon
+- [x] Admin kontrolü (`TELEGRAM_CHAT_ID` doğrulaması)
+- [x] Gelen mesaj handler'ı
+- [x] İşveren mesajı → Career Agent → Judge Agent → cevap akışı
+- [x] Revizyon loop'u (max 3 iterasyon)
+- [x] Error handling ve logging
 
-### 3.2 Admin Bildirimleri
-- [ ] Yeni mesaj gelince sana bildirim gönder
-- [ ] Cevap onaylanınca sana bildirim gönder
-- [ ] İnsan müdahalesi tetiklenince sana alert gönder:
+### 3.2 Admin Komutları ✅ TAMAMLANDI
+- [x] `/start` — Hoşgeldin mesajı (admin only)
+- [x] `/reply <metin>` — Casual→Professional dönüşüm (admin only)
+- [x] `/show_cv` — CV'yi göster (text + document) (admin only)
+- [x] `/status` — Bot durumu ve istatistikler (admin only)
+
+### 3.3 Admin Bildirimleri ✅ TAMAMLANDI
+- [x] Cevap onaylandığında skor ve iterasyon bilgisi
+- [x] Intervention tetiklendiğinde alert:
   ```
-  ⚠️ MÜDAHALE GEREKİYOR
+  ⚠️ INTERVENTION GEREKLİ
   Sebep: salary_negotiation
-  Mesaj: "..."
-  → Bot beklemeye alındı.
+  İşveren Mesajı: ...
+  Taslak Cevap: ...
   ```
+- [x] Max iterasyon aşıldığında uyarı
 
-### 3.3 Admin Komutları
-- [ ] `/reply <metin>` — Talimat ver, Career Agent profesyonelleştirip göndersin
-- [ ] `/update_cv` — Yeni `.txt` dosyası gönder, CV'yi güncelle
-- [ ] `/add_info <metin>` — CV'ye yeni bilgi ekle
-- [ ] `/remove_info <metin>` — CV'den bilgi sil
-- [ ] `/show_cv` — Mevcut CV'yi göster
-- [ ] `/status` — Bot durumunu göster (kaç mesaj işlendi vb.)
-
-### 3.4 İnsan Müdahalesi Tetikleyicileri (`tools/intervention.py`)
-- [ ] Maaş/ücret pazarlığı tespiti
-- [ ] Hukuki soru tespiti
-- [ ] Uzmanlık dışı teknik soru tespiti
-- [ ] Belirsiz/muğlak iş teklifi tespiti
-- [ ] Konu dışı mesaj tespiti
+### 3.4 İnsan Müdahalesi Tetikleyicileri ✅ TAMAMLANDI (EvaluatorAgent içinde)
+- [x] Maaş/ücret pazarlığı tespiti (`salary_negotiation`)
+- [x] Hukuki soru tespiti (`legal_question`)
+- [x] Uzmanlık dışı teknik soru tespiti (`out_of_domain`)
+- [x] Belirsiz/muğlak iş teklifi tespiti (`ambiguous_offer`)
+- [x] Konu dışı mesaj tespiti (`off_topic`)
 
 ---
 
-## 4. ✅ FAZ 4 — EvalOps & Loglama
+## 4. ⏳ FAZ 4 — EvalOps & Loglama
 
 ### 4.1 Logger (`tools/logger.py`)
 - [ ] Her interaksiyonu CSV'ye logla:
@@ -143,7 +144,7 @@
 
 ---
 
-## 5. ✅ FAZ 5 — Dashboard (React)
+## 5. ⏳ FAZ 5 — Dashboard (React)
 
 ### 5.1 FastAPI Kurulumu (`api/main.py`)
 - [ ] `fastapi` ve `uvicorn` dependency'lerini ekle
@@ -174,7 +175,7 @@
 
 ---
 
-## 6. ✅ FAZ 6 — Deploy
+## 6. ⏳ FAZ 6 — Deploy
 
 ### 6.1 Railway (Bot + Backend)
 - [ ] Railway hesabı oluştur / giriş yap

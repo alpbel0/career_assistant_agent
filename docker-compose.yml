@@ -5,6 +5,7 @@ services:
     build: .
     container_name: agent
     restart: unless-stopped
+    command: python -m bot.telegram_bot
     env_file:
       - .env
     volumes:

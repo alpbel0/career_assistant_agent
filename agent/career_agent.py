@@ -255,7 +255,8 @@ Be professional yet approachable, confident but humble."""
         self,
         employer_id: str,
         employer_message: str,
-        cv_query: str = ""
+        cv_query: str = "",
+        feedback: str = ""
     ) -> Dict[str, Any]:
         """
         Generate professional response to employer message.
@@ -264,6 +265,7 @@ Be professional yet approachable, confident but humble."""
             employer_id: Unique employer identifier (Telegram ID/username)
             employer_message: The message from employer
             cv_query: Optional query for RAG context retrieval
+            feedback: Optional feedback from Judge Agent for revision
 
         Returns:
             Dict with:
@@ -272,8 +274,9 @@ Be professional yet approachable, confident but humble."""
                 - tokens_used: int
                 - employer_message_saved: bool
         """
-        # Save employer message to history
-        self._save_history(employer_id, "employer", employer_message)
+        # Save employer message to history (only on first call, not revisions)
+        if not feedback:
+            self._save_history(employer_id, "employer", employer_message)
 
         # Load conversation history
         history = self._load_history(employer_id)
@@ -285,11 +288,17 @@ Be professional yet approachable, confident but humble."""
 
         # Load and format system prompt
         system_template = self._load_system_prompt()
+
+        # Add feedback to system prompt if this is a revision
+        feedback_section = ""
+        if feedback:
+            feedback_section = f"\n\nREVISION FEEDBACK (improve based on this):\n{feedback}\n\nGenerate a revised response addressing the feedback above."
+
         system_prompt = system_template.format(
             cv_context=cv_context,
             conversation_history=formatted_history,
             employer_message=employer_message
-        )
+        ) + feedback_section
 
         # Call LLM
         messages = [
@@ -299,15 +308,16 @@ Be professional yet approachable, confident but humble."""
 
         llm_result = await self._call_llm(messages)
 
-        # Save assistant response to history
+        # Save assistant response to history (only on approved responses)
         response = llm_result["content"]
-        self._save_history(employer_id, "assistant", response)
+        if not feedback:
+            self._save_history(employer_id, "assistant", response)
 
         return {
             "response": response,
             "raw_llm_response": llm_result["raw_response"],
             "tokens_used": llm_result["tokens_used"],
-            "employer_message_saved": True
+            "employer_message_saved": not feedback  # Only saved if not a revision
         }
 
     async def professionalize_instruction(

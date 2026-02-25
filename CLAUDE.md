@@ -67,7 +67,7 @@ career-agent/
 | LLM Provider | OpenRouter | ✅ Tamamlandı |
 | Career Agent | `openai/gpt-4o-mini` | ✅ Faz 2.1 tamamlandı |
 | Judge Agent | `google/gemini-2.0-flash-001` | ✅ Faz 2.2 tamamlandı |
-| Bot | Telegram Bot API (`python-telegram-bot`) | ⏳ Faz 3 |
+| Bot | Telegram Bot API (`python-telegram-bot`) | ✅ Faz 3 tamamlandı |
 | Backend | Python + FastAPI | ⏳ Faz 5 |
 | Frontend | React + Vite + TailwindCSS + Recharts | ⏳ Faz 5 |
 | Database | ChromaDB (RAG için) | ✅ Tamamlandı |
@@ -172,8 +172,8 @@ APPROVAL_THRESHOLD=4.0
 | Faz | Durum |
 |-----|-------|
 | Faz 1 — Temel Altyapı | ✅ Tamamlandı |
-| Faz 2 — Agent'lar | 🔄 Devam ediyor (2.1 ✅, 2.2 ✅) |
-| Faz 3 — Telegram Bot | ⏳ Bekliyor |
+| Faz 2 — Agent'lar | ✅ Tamamlandı (2.1 ✅, 2.2 ✅) |
+| Faz 3 — Telegram Bot | ✅ Tamamlandı |
 | Faz 4 — EvalOps & Loglama | ⏳ Bekliyor |
 | Faz 5 — Dashboard | ⏳ Bekliyor |
 | Faz 6 — Deploy | ⏳ Bekliyor |
@@ -213,10 +213,21 @@ APPROVAL_THRESHOLD=4.0
 - ✅ Docker container içinde test edildi
 - ✅ Gerçek API ile test edildi
 
-### Şu anki sonraki adım (Faz 3):
-1. Telegram bot'unu implement et (`bot/telegram_bot.py`)
-2. Admin komutlarını ekle (/reply, /update_cv, /show_cv, /status)
-3. Admin bildirimleri (intervention, approval)
+### Faz 3 Tamamlananlar:
+- ✅ `bot/telegram_bot.py` — CareerAssistantBot sınıfı
+- ✅ `python-telegram-bot>=21.0` entegrasyonu
+- ✅ Admin kontrolü (`TELEGRAM_CHAT_ID` ile)
+- ✅ Komut handler'ları: `/start`, `/reply`, `/show_cv`, `/status`
+- ✅ Mesaj handler'ı (işveren mesajları için)
+- ✅ Revizyon loop'u (max 3 iterasyon, feedback ile)
+- ✅ Intervention bildirimleri
+- ✅ Bot istatistikleri tracking
+- ✅ Error handling ve logging
+
+### Şu anki sonraki adım (Faz 4):
+1. Logger implement et (`tools/logger.py`)
+2. Her interaksiyonu CSV'ye logla
+3. Dataset hazırlığı (HuggingFace formatı)
 
 ## 🎓 Proje Türü
 
