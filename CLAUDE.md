@@ -46,30 +46,34 @@ career-agent/
 │   └── telegram_bot.py       # Telegram bot + admin komutları
 │
 ├── tools/
-│   ├── intervention.py       # İnsan müdahalesi tespiti
-│   └── logger.py             # CSV loglama
+│   ├── intervention.py       # İnsan müdahalesi tespiti (yapılacak)
+│   ├── logger.py             # CSV loglama (yapılacak)
+│   ├── cv_context.py         # Hybrid context logic (RAG/static)
+│   └── index_cv.py           # ChromaDB indexleme scripti
 │
 ├── data/
-│   ├── cv.txt                # CV/profil (statik context)
+│   ├── cv.txt                # CV/profil (3545 karakter → ChromaDB RAG)
 │   ├── history.json          # Memory (employer başına konuşma geçmişi)
-│   └── logs.csv              # Evaluation logları
+│   ├── logs.csv              # Evaluation logları
+│   └── chromadb/             # ChromaDB vektör veritabanı (gitignore'da)
 │
 └── dashboard/                # React frontend (Vercel deploy)
 ```
 
 ## 🔧 Tech Stack
 
-| Component | Technology |
-|-----------|------------|
-| LLM Provider | OpenRouter |
-| Career Agent | `openai/gpt-4o-mini` |
-| Judge Agent | `minimax/minimax-m2.5` |
-| Bot | Telegram Bot API (`python-telegram-bot`) |
-| Backend | Python + FastAPI |
-| Frontend | React + Vite + TailwindCSS + Recharts |
-| Database | ChromaDB (RAG için) |
-| Deployment | Railway (bot) + Vercel (dashboard) |
-| Dataset | HuggingFace |
+| Component | Technology | Durum |
+|-----------|------------|-------|
+| LLM Provider | OpenRouter | 🔗 Yapılacak |
+| Career Agent | `openai/gpt-4o-mini` | ⏳ Faz 2 |
+| Judge Agent | `minimax/minimax-m2.5` | ⏳ Faz 2 |
+| Bot | Telegram Bot API (`python-telegram-bot`) | ⏳ Faz 3 |
+| Backend | Python + FastAPI | ⏳ Faz 5 |
+| Frontend | React + Vite + TailwindCSS + Recharts | ⏳ Faz 5 |
+| Database | ChromaDB (RAG için) | ✅ Tamamlandı |
+| Deployment | Railway (bot) + Vercel (dashboard) | ⏳ Faz 6 |
+| Dataset | HuggingFace | ⏳ Faz 7 |
+| Docker | Docker + docker-compose | ✅ Tamamlandı |
 
 ## 🧠 EvalOps Metrikleri (1-5 scale)
 
@@ -163,12 +167,30 @@ APPROVAL_THRESHOLD=4.0
 4. **Judge feedback'i önemse** — Revizyon loop'u Judge'un feedback'ini kullanır
 5. **CV context stratejisi** — Kısa CV: direkt prompt, Uzun CV: ChromaDB RAG
 
-## 📌 Öncelikli Görevler
+## 📌 İlerleme Durumu
 
-Şu anki duruma göre bir sonraki adım:
-1. Docker setup'ı tamamla
-2. Agent'ları OpenRouter'a bağla
-3. Telegram bot'u aktif et
+| Faz | Durum |
+|-----|-------|
+| Faz 1 — Temel Altyapı | ✅ Tamamlandı |
+| Faz 2 — Agent'lar | 🔄 Sonraki |
+| Faz 3 — Telegram Bot | ⏳ Bekliyor |
+| Faz 4 — EvalOps & Loglama | ⏳ Bekliyor |
+| Faz 5 — Dashboard | ⏳ Bekliyor |
+| Faz 6 — Deploy | ⏳ Bekliyor |
+| Faz 7 — Test & Teslim | ⏳ Bekliyor |
+
+### Faz 1 Tamamlananlar:
+- ✅ GitHub repo: `https://github.com/alpbel0/career_assistant_agent.git`
+- ✅ Dockerfile + docker-compose.yml + .dockerignore
+- ✅ Hybrid context logic (`tools/cv_context.py`)
+- ✅ ChromaDB CV indexleme (`tools/index_cv.py`)
+- ✅ CV (3545 karakter) → 8 chunk olarak ChromaDB'ye indexlendi
+- ✅ `.gitignore`'da hassas data dosyaları hariç tutuluyor
+
+### Şu anki sonraki adım (Faz 2):
+1. Career Agent'ı OpenRouter'a bağla (`agent/career_agent.py`)
+2. Judge Agent'ı OpenRouter'a bağla (`agent/evaluator_agent.py`)
+3. Prompt dosyalarını yaz (`prompts/career_prompt.txt`, `prompts/evaluator_prompt.txt`)
 4. EvalOps loop'unu test et
 
 ## 🎓 Proje Türü

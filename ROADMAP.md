@@ -18,32 +18,33 @@
 
 ---
 
-## 1. ✅ FAZ 1 — Temel Altyapı
+## 1. ✅ FAZ 1 — Temel Altyapı — TAMAMLANDI
 
-### 1.1 Proje Kurulumu
-- [ ] GitHub reposu oluştur
-- [ ] Klasör yapısını oluştur (`agent/`, `bot/`, `tools/`, `data/`, `dashboard/`)
-- [ ] `requirements.txt` yaz
-- [ ] `.env.example` dosyasını oluştur
-- [ ] `.gitignore` ekle (`.env`, `__pycache__`, `logs/` vb.)
+### 1.1 Proje Kurulumu ✅
+- [x] GitHub reposu oluştur
+- [x] Klasör yapısını oluştur (`agent/`, `bot/`, `tools/`, `data/`, `api/`, `tests/`)
+- [x] `requirements.txt` yaz
+- [x] `.env.example` dosyasını oluştur
+- [x] `.gitignore` ekle (`.env`, `__pycache__`, `logs/`, `data/` hassas dosyalar)
 
-### 1.2 Docker
-- [ ] `Dockerfile` yaz (Python 3.11 base image)
-- [ ] `docker-compose.yml` yaz
-- [ ] Lokal olarak `docker compose up --build` ile test et
-- [ ] Container içinden OpenRouter'a bağlantıyı doğrula
+### 1.2 Docker ✅
+- [x] `Dockerfile` yaz (Python 3.11-slim base image)
+- [x] `docker-compose.yml` yaz
+- [x] `.dockerignore` ekle
+- [x] Lokal olarak `docker compose up --build` ile test et
+- [x] Container içinden OpenRouter'a bağlantıyı doğrula (`tools/test_openrouter.py`)
 
-### 1.3 CV & Veri
-- [ ] `data/cv.txt` dosyasını oluştur (kendi bilgilerini ekle)
-- [ ] `data/history.json` oluştur — memory (employer bazlı konuşma geçmişi)
-- [ ] `data/logs.csv` oluştur — evaluation logları
-- [ ] Hybrid context logic'i yaz (`len < 2000` → `cv.txt` direkt prompta, değilse ChromaDB RAG)
-- [ ] ChromaDB dependency'sini ekle
-- [ ] ChromaDB'ye CV chunk'larını index'le
+### 1.3 CV & Veri ✅
+- [x] `data/cv.txt` dosyası mevcut (3545 karakter → RAG kullanılacak)
+- [x] `data/history.json` mevcut — memory (employer bazlı konuşma geçmişi)
+- [x] `data/logs.csv` mevcut — evaluation logları
+- [x] `tools/cv_context.py` — Hybrid context logic (`len < 2000` → direkt, `>= 2000` → ChromaDB RAG)
+- [x] `tools/index_cv.py` — CV chunk'larını ChromaDB'ye index'leyen script
+- [x] ChromaDB'ye CV 8 chunk olarak indexlendi (500 char, 50 overlap)
 
 ---
 
-## 2. ✅ FAZ 2 — Agent'lar
+## 2. 🔄 FAZ 2 — Agent'lar — SONRAKİ
 
 ### 2.1 Career Agent (`agent/career_agent.py`)
 - [ ] OpenRouter API bağlantısını kur
