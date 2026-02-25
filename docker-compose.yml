@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  bot:
+    build: .
+    container_name: agent
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      # Local mount - ChromaDB ve loglar persist olur
+      - ./data:/app/data
+    ports:
+      - "8001:8000"  # FastAPI için (ileriki faz)
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
