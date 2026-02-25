@@ -60,3 +60,4 @@ Thumbs.db
 
 # Docker
 .dockerignore
+dashboard/node_modules/
