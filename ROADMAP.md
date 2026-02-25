@@ -120,31 +120,29 @@
 
 ---
 
-## 4. ⏳ FAZ 4 — EvalOps & Loglama
+## 4. ✅ FAZ 4 — EvalOps & Loglama — TAMAMLANDI
 
-### 4.1 Logger (`tools/logger.py`)
-- [ ] Her interaksiyonu CSV'ye logla:
-  - [ ] `timestamp`
-  - [ ] `employer_message`
-  - [ ] `draft_response`
-  - [ ] `truthfulness_score`
-  - [ ] `robustness_score`
-  - [ ] `helpfulness_score`
-  - [ ] `tone_score`
-  - [ ] `overall_score`
-  - [ ] `feedback`
-  - [ ] `final_response`
-  - [ ] `category` (interview / technical / offer / unknown)
-  - [ ] `iterations` (kaç revizyonda onaylandı)
-  - [ ] `intervention_triggered`
-- [ ] Log dosyasının Docker volume'a yazıldığını doğrula
-- [ ] CSV'yi okuyup özet istatistik döndüren fonksiyon yaz
+### 4.1 Logger (`tools/logger.py`) ✅
+- [x] Her interaksiyonu CSV'ye logla:
+  - [x] `timestamp`
+  - [x] `employer_message`
+  - [x] `draft_response`
+  - [x] `truthfulness_score`
+  - [x] `robustness_score`
+  - [x] `helpfulness_score`
+  - [x] `tone_score`
+  - [x] `overall_score`
+  - [x] `feedback`
+  - [x] `final_response`
+  - [x] `category` (interview / technical / offer / unknown — keyword matching)
+  - [x] `iterations` (kaç revizyonda onaylandı)
+  - [x] `intervention_triggered`
+- [x] Log dosyasının Docker volume'a yazıldığını doğrula (`./data:/app/data` mount mevcut)
+- [x] CSV'yi okuyup özet istatistik döndüren fonksiyon yaz (`get_summary_stats()`)
 
 ### 4.2 Dataset Hazırlığı
 - [ ] En az 3 test case'i çalıştır ve logla
 - [ ] CSV'yi kontrol et, eksik/hatalı satır var mı bak
-- [ ] HuggingFace'e yüklemek için dataset formatını hazırla
-
 ---
 
 ## 5. ⏳ FAZ 5 — Dashboard (React)

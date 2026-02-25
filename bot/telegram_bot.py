@@ -19,17 +19,19 @@ from datetime import datetime
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from telegram import Update, BotCommand
+from telegram import Update, BotCommand, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
     CommandHandler,
     MessageHandler,
+    CallbackQueryHandler,
     filters,
     ContextTypes,
 )
 from agent.career_agent import CareerAgent
 from agent.evaluator_agent import EvaluatorAgent
-from tools.cv_context import get_cv_context
+from tools.cv_context import get_cv_context, check_cv_relevance
+from tools.logger import log_interaction
 
 # Configure logging
 logging.basicConfig(
@@ -74,9 +76,18 @@ class CareerAssistantBot:
         self.career_agent = CareerAgent()
         self.evaluator_agent = EvaluatorAgent()
 
+        # Bot instance (will be set when handlers are registered)
+        self.bot = None
+
         # Track active employer conversations
         # Key: employer_id, Value: dict with metadata
         self.active_conversations: Dict[str, Dict[str, Any]] = {}
+
+        # Track pending interventions (employer_id -> data)
+        self.pending_interventions: Dict[str, Dict[str, Any]] = {}
+
+        # Track admin's drafted responses
+        self.admin_drafts: Dict[str, str] = {}
 
         # Statistics
         self.stats = {
@@ -152,6 +163,9 @@ class CareerAssistantBot:
         /reply command — convert casual instruction to professional response.
 
         Usage: /reply tell them I'm available next week
+
+        If there's a pending intervention waiting for custom response,
+        sends it directly to the employer.
         """
         if not self._is_admin(update):
             await update.message.reply_text(
@@ -159,11 +173,66 @@ class CareerAssistantBot:
             )
             return
 
+        # Check if waiting for custom response for a specific employer
+        for employer_id, draft in list(self.admin_drafts.items()):
+            if draft.startswith("waiting_"):
+                # This is the intervention waiting for response
+                casual_instruction = " ".join(context.args) if context.args else ""
+
+                if not casual_instruction:
+                    await update.message.reply_text("⚠️ Lütfen mesaj yaz:\n\nÖrnek: /reply müsait olduğumu söyle")
+                    return
+
+                # Professionalize and show preview with buttons
+                try:
+                    await update.message.reply_text("⏳ Profesyonel versiyon hazırlanıyor...")
+
+                    result = await self.career_agent.professionalize_instruction(
+                        casual_instruction
+                    )
+                    professional_response = result['response']
+
+                    # Store the professionalized text (ready to send)
+                    self.admin_drafts[employer_id] = professional_response
+
+                    # Show preview with Send / Rewrite buttons
+                    keyboard = [
+                        [
+                            InlineKeyboardButton("✅ Gönder", callback_data=f"confirm_send_{employer_id}"),
+                            InlineKeyboardButton("✏️ Tekrar Yaz", callback_data=f"retry_custom_{employer_id}"),
+                        ]
+                    ]
+                    reply_markup = InlineKeyboardMarkup(keyboard)
+
+                    await update.message.reply_text(
+                        f"📝 *Profesyonel Cevap Önizleme:*\n\n{professional_response}\n\n"
+                        f"👇 Ne yapmak istersin?",
+                        parse_mode="Markdown",
+                        reply_markup=reply_markup
+                    )
+                    return
+                except Exception as e:
+                    logger.error(f"Error in /reply command: {e}")
+                    await update.message.reply_text(f"❌ Hata: {str(e)}")
+                    return
+
+        # Normal /reply flow (no pending intervention)
         if not context.args or len(" ".join(context.args).strip()) == 0:
-            await update.message.reply_text(
-                "ℹ️ Kullanım: /reply <mesaj>\n\n"
-                "Örnek: /reply tell them I'm available next week"
-            )
+            if self.pending_interventions:
+                pending_list = "\n".join([
+                    f"• `{emp_id}` ({inv['reason']})"
+                    for emp_id, inv in self.pending_interventions.items()
+                ])
+                await update.message.reply_text(
+                    f"⏳ *Bekleyen Intervention'lar:*\n\n{pending_list}\n\n"
+                    "Cevap göndermek için butona tıkla.",
+                    parse_mode="Markdown"
+                )
+            else:
+                await update.message.reply_text(
+                    "ℹ️ Kullanım: /reply <mesaj>\n\n"
+                    "Örnek: /reply tell them I'm available next week"
+                )
             return
 
         casual_instruction = " ".join(context.args)
@@ -476,6 +545,56 @@ class CareerAssistantBot:
             logger.error(f"Error in /remove_info command: {e}")
             await update.message.reply_text(f"❌ Bilgi silinemedi: {str(e)}")
 
+    def _check_intervention_keywords(self, message: str) -> tuple[bool, str]:
+        """
+        Hızlı keyword tabanlı intervention kontrolü.
+        LLM çağrısı yapılmadan önce çalışır.
+
+        Returns:
+            (should_intervene: bool, reason: str | None)
+        """
+        import re
+        lower = message.lower()
+
+        # Maaş / ücret pazarlığı
+        salary_patterns = [
+            r'\$\s*\d+', r'\d+\s*\$',
+            'salary', 'compensation', 'pay ', 'wage',
+            'maaş', 'ücret', 'maas', 'ucret',
+        ]
+        for p in salary_patterns:
+            if re.search(p, lower):
+                return True, 'salary_negotiation'
+
+        # Hukuki sorular
+        legal_keywords = [
+            'nda', 'non-disclosure', 'contract', 'agreement',
+            'sözleşme', 'sozlesme', 'kontrat', 'legal', 'clause',
+        ]
+        if any(k in lower for k in legal_keywords):
+            return True, 'legal_question'
+
+        # Belirsiz teklif
+        offer_patterns = [
+            r'we have an? offer',
+            r'teklifimiz var', r'iş teklifimiz',
+            r'join our team', r'ekibimize katıl',
+        ]
+        for p in offer_patterns:
+            if re.search(p, lower):
+                return True, 'ambiguous_offer'
+
+        # Spam / konu dışı
+        spam_patterns = [
+            r'buy.{0,10}now', r'click here', r'free trial',
+            r'win.{0,10}prize', r'congratulations.{0,20}winner',
+        ]
+        for p in spam_patterns:
+            if re.search(p, lower):
+                return True, 'off_topic'
+
+        return False, None
+
     async def _generate_with_revision_loop(
         self,
         employer_message: str,
@@ -585,7 +704,7 @@ class CareerAssistantBot:
         draft_response: str
     ) -> None:
         """
-        Send intervention alert to admin.
+        Send intervention alert to admin and acknowledgment to employer.
 
         Args:
             update: Telegram update object
@@ -602,33 +721,204 @@ class CareerAssistantBot:
         }
 
         emoji = reason_emojis.get(reason, "⚠️")
+        employer_id = self._get_employer_id(update)
+        employer_user_id = update.effective_user.id
+
+        # Store intervention state
+        self.pending_interventions[employer_id] = {
+            "employer_user_id": employer_user_id,
+            "message": message,
+            "draft_response": draft_response,
+            "reason": reason,
+        }
+
+        # Send acknowledgment to employer
+        await update.message.reply_text(
+            "Mesajınız alındı. En kısa sürede size dönüş yapacağım. İyi günler!"
+        )
+
+        # Send detailed alert to admin with inline keyboard
+        keyboard = [
+            [
+                InlineKeyboardButton("✅ Taslağı Gönder", callback_data=f"send_draft_{employer_id}"),
+                InlineKeyboardButton("✏️ Kendi Yaz", callback_data=f"custom_{employer_id}"),
+            ]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
 
         alert_text = (
-            f"{emoji} *INTERVENTION GEREKLİ*\n\n"
+            f"{emoji} *INTERVENTION — Onay Bekliyor*\n\n"
+            f"*Kaynak:* `{employer_id}` (ID: {employer_user_id})\n"
             f"*Sebep:* `{reason}`\n\n"
             f"*İşveren Mesajı:*\n{message}\n\n"
             f"*Taslak Cevap:*\n{draft_response}\n\n"
-            "⚠️ Lütfen bu durumu manuel olarak yönetin."
+            "👇 Ne yapmak istersin?"
         )
 
-        await update.message.reply_text(alert_text, parse_mode="Markdown")
+        try:
+            await self.bot.send_message(
+                chat_id=self.admin_chat_id,
+                text=alert_text,
+                parse_mode="Markdown",
+                reply_markup=reply_markup
+            )
+        except Exception as e:
+            logger.error(f"Failed to send intervention alert to admin: {e}")
+
+    async def handle_callback_query(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """
+        Handle callback queries from inline keyboard buttons.
+
+        Actions:
+        - send_draft_<employer_id>: Send the draft response to employer
+        - custom_<employer_id>: Prompt admin to write custom response
+        """
+        query = update.callback_query
+        if not query:
+            return
+
+        await query.answer()  # Acknowledge the callback
+
+        # Security check - only admin can handle callbacks
+        if query.from_user.id != self.admin_chat_id:
+            await query.edit_message_text("⚠️ Bu işlem için yetkiniz yok.")
+            return
+
+        callback_data = query.data
+        if not callback_data:
+            return
+
+        logger.info(f"🔘 Callback received: {callback_data}")
+
+        try:
+            if callback_data.startswith("send_draft_"):
+                employer_id = callback_data.replace("send_draft_", "")
+                intervention = self.pending_interventions.get(employer_id)
+
+                if not intervention:
+                    await query.edit_message_text(f"⚠️ İşlem bulunamadı veya zaman aşımına uğradı.")
+                    return
+
+                # Send draft to employer
+                employer_user_id = intervention["employer_user_id"]
+                draft_response = intervention["draft_response"]
+
+                try:
+                    await self.bot.send_message(
+                        chat_id=employer_user_id,
+                        text=draft_response
+                    )
+                    await query.edit_message_text(
+                        f"✅ Taslak cevap `{employer_id}` adresine gönderildi.",
+                        parse_mode="Markdown"
+                    )
+                    logger.info(f"✅ Draft sent to employer {employer_id}")
+                except Exception as e:
+                    logger.error(f"Failed to send draft to employer: {e}")
+                    await query.edit_message_text(f"❌ Gönderim başarısız: {e}")
+
+                # Clean up
+                self.pending_interventions.pop(employer_id, None)
+
+            elif callback_data.startswith("custom_"):
+                employer_id = callback_data.replace("custom_", "")
+                intervention = self.pending_interventions.get(employer_id)
+
+                if not intervention:
+                    await query.edit_message_text(f"⚠️ İşlem bulunamadı veya zaman aşımına uğradı.")
+                    return
+
+                # Store marker for custom reply - admin will use /reply command
+                # The intervention stays in pending_interventions, we just mark it as waiting
+                self.admin_drafts[employer_id] = f"waiting_for_custom_response"
+
+                await query.edit_message_text(
+                    f"✏️ Özel cevap yazma modu.\n\n"
+                    f"Şimdi `/reply <mesaj>` komutunu kullanarak kendi cevabınızı yazın.\n"
+                    f"Cevapınız `{employer_id}` adresine gönderilecek.",
+                    parse_mode="Markdown"
+                )
+                logger.info(f"✏️ Admin prompted for custom response to {employer_id}")
+
+            elif callback_data.startswith("confirm_send_"):
+                employer_id = callback_data.replace("confirm_send_", "")
+                intervention = self.pending_interventions.get(employer_id)
+                professional_response = self.admin_drafts.get(employer_id)
+
+                if not intervention or not professional_response:
+                    await query.edit_message_text("⚠️ İşlem bulunamadı veya zaman aşımına uğradı.")
+                    return
+
+                employer_user_id = intervention["employer_user_id"]
+
+                try:
+                    await context.bot.send_message(
+                        chat_id=employer_user_id,
+                        text=professional_response
+                    )
+                    await query.edit_message_text(
+                        f"✅ Mesaj `{employer_id}` adresine gönderildi:\n\n{professional_response}",
+                        parse_mode="Markdown"
+                    )
+                    logger.info(f"✅ Custom response sent to employer {employer_id}")
+                except Exception as e:
+                    logger.error(f"Failed to send custom response to employer: {e}")
+                    await query.edit_message_text(f"❌ Gönderim başarısız: {e}")
+
+                # Clean up
+                self.pending_interventions.pop(employer_id, None)
+                self.admin_drafts.pop(employer_id, None)
+
+            elif callback_data.startswith("retry_custom_"):
+                employer_id = callback_data.replace("retry_custom_", "")
+
+                if employer_id not in self.pending_interventions:
+                    await query.edit_message_text("⚠️ İşlem bulunamadı veya zaman aşımına uğradı.")
+                    return
+
+                # Reset to waiting state
+                self.admin_drafts[employer_id] = "waiting_for_custom_response"
+
+                await query.edit_message_text(
+                    f"✏️ Tekrar yaz modu.\n\n"
+                    f"`/reply <mesaj>` komutunu kullanarak yeni cevabını yaz.\n"
+                    f"Cevap `{employer_id}` adresine gönderilecek.",
+                    parse_mode="Markdown"
+                )
+                logger.info(f"✏️ Admin prompted to retry custom response for {employer_id}")
+
+            else:
+                await query.edit_message_text("⚠️ Bilinmeyen işlem.")
+
+        except Exception as e:
+            logger.error(f"Error handling callback query: {e}", exc_info=True)
+            try:
+                await query.edit_message_text(f"❌ İşlem hatası: {e}")
+            except Exception:
+                pass
 
     async def handle_employer_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """
         Handle incoming employer messages (non-command messages).
 
         This is the main flow:
-        1. Receive message
+        1. Receive message (from anyone - employer messages)
         2. Generate response with revision loop
         3. Check for intervention
         4. If approved, show the response
+
+        NOTE: This accepts messages from ANYONE (simulating employers).
+        Only admin commands are restricted.
         """
-        # Reject messages from non-admin users
-        if not self._is_admin(update):
-            await update.message.reply_text(
-                "⛔ Bu botu kullanma yetkiniz yok."
-            )
+        if not update.effective_user:
+            logger.warning("Received message without effective_user")
             return
+
+        user_id = update.effective_user.id
+        username = update.effective_user.username or "no_username"
+        is_admin = self._is_admin(update)
+
+        logger.info(f"📨 Message from user_id={user_id}, username={username}, is_admin={is_admin}")
 
         if not update.message or not update.message.text:
             return
@@ -648,38 +938,134 @@ class CareerAssistantBot:
         await update.message.chat.send_action("typing")
 
         try:
-            # Generate response with revision loop
+            # ─────────────────────────────────────────────────────────────────
+            # PRE-CHECK 1: Keyword tabanlı intervention (LLM çağrısı yok)
+            # ─────────────────────────────────────────────────────────────────
+            should_intervene, intervention_reason = self._check_intervention_keywords(employer_message)
+            if should_intervene:
+                logger.info(f"🚨 Pre-check intervention: {intervention_reason}")
+                self.stats["interventions_triggered"] += 1
+                try:
+                    log_interaction(
+                        employer_id=employer_id,
+                        employer_message=employer_message,
+                        draft_response="",
+                        evaluation=None,
+                        final_response="",
+                        is_approved=False,
+                        iterations=0,
+                        intervention_triggered=True,
+                        intervention_reason=intervention_reason,
+                    )
+                except Exception as log_err:
+                    logger.error(f"Logging failed (non-critical): {log_err}")
+                await self._send_intervention_alert(
+                    update=update,
+                    reason=intervention_reason,
+                    message=employer_message,
+                    draft_response=""
+                )
+                return
+
+            # ─────────────────────────────────────────────────────────────────
+            # PRE-CHECK 2: CV relevance — konu CV'de var mı?
+            # ─────────────────────────────────────────────────────────────────
+            is_relevant, cv_context, distance = check_cv_relevance(employer_message)
+            logger.info(f"CV relevance: {is_relevant} (distance={distance:.3f})")
+
+            if not is_relevant:
+                logger.info(f"🚨 CV relevance intervention: topic not in CV (distance={distance:.3f})")
+                self.stats["interventions_triggered"] += 1
+                try:
+                    log_interaction(
+                        employer_id=employer_id,
+                        employer_message=employer_message,
+                        draft_response="",
+                        evaluation=None,
+                        final_response="",
+                        is_approved=False,
+                        iterations=0,
+                        intervention_triggered=True,
+                        intervention_reason="out_of_domain",
+                    )
+                except Exception as log_err:
+                    logger.error(f"Logging failed (non-critical): {log_err}")
+                await self._send_intervention_alert(
+                    update=update,
+                    reason="out_of_domain",
+                    message=employer_message,
+                    draft_response=""
+                )
+                return
+
+            # ─────────────────────────────────────────────────────────────────
+            # MAIN FLOW: CV'de bilgi var → üret → değerlendir → gönder
+            # ─────────────────────────────────────────────────────────────────
             result = await self._generate_with_revision_loop(
                 employer_message=employer_message,
                 employer_id=employer_id
             )
 
-            # Handle intervention
-            if result["intervention_triggered"]:
+            # PRE-CHECK 3: Agent konu hakkında bilgisi yoksa → admin
+            if result.get("response", "").strip() == "[UNCERTAIN]":
+                logger.info("🚨 Agent returned [UNCERTAIN] → routing to admin")
                 self.stats["interventions_triggered"] += 1
+                try:
+                    log_interaction(
+                        employer_id=employer_id,
+                        employer_message=employer_message,
+                        draft_response="[UNCERTAIN]",
+                        evaluation=None,
+                        final_response="",
+                        is_approved=False,
+                        iterations=result.get("iterations", 0),
+                        intervention_triggered=True,
+                        intervention_reason="out_of_domain",
+                    )
+                except Exception as log_err:
+                    logger.error(f"Logging failed (non-critical): {log_err}")
                 await self._send_intervention_alert(
                     update=update,
-                    reason=result.get("intervention_reason", "unknown"),
+                    reason="out_of_domain",
                     message=employer_message,
-                    draft_response=result["response"]
+                    draft_response=""
                 )
                 return
+
+            # Log interaction
+            try:
+                log_interaction(
+                    employer_id=employer_id,
+                    employer_message=employer_message,
+                    draft_response=result.get("response", ""),
+                    evaluation=result.get("evaluation"),
+                    final_response=result.get("response", ""),
+                    is_approved=result.get("success", False),
+                    iterations=result.get("iterations", 0),
+                    intervention_triggered=False,
+                    intervention_reason=None,
+                )
+            except Exception as log_err:
+                logger.error(f"Logging failed (non-critical): {log_err}")
 
             # Handle successful generation
             if result["success"]:
                 self.stats["responses_approved"] += 1
 
-                eval_data = result["evaluation"]
-                response_text = (
-                    "✅ *Cevap Onaylandı*\n\n"
-                    f"* skor:* `{eval_data['overall_score']}`\n"
-                    f"*T:* `{eval_data['truthfulness_score']}` "
-                    f"*R:* `{eval_data['robustness_score']}` "
-                    f"*H:* `{eval_data['helpfulness_score']}` "
-                    f"*T:* `{eval_data['tone_score']}`\n"
-                    f"*İterasyon:* `{result['iterations']}`\n\n"
-                    f"*Cevap:*\n{result['response']}"
-                )
+                if is_admin:
+                    eval_data = result["evaluation"]
+                    response_text = (
+                        "✅ *Cevap Onaylandı*\n\n"
+                        f"*Skor:* `{eval_data['overall_score']}`\n"
+                        f"*T:* `{eval_data['truthfulness_score']}` "
+                        f"*R:* `{eval_data['robustness_score']}` "
+                        f"*H:* `{eval_data['helpfulness_score']}` "
+                        f"*To:* `{eval_data['tone_score']}`\n"
+                        f"*İterasyon:* `{result['iterations']}`\n\n"
+                        f"*Cevap:*\n{result['response']}"
+                    )
+                else:
+                    response_text = result["response"]
 
                 await update.message.reply_text(response_text, parse_mode="Markdown")
             else:
@@ -692,7 +1078,6 @@ class CareerAssistantBot:
                     f"*Feedback:* {result['evaluation'].get('feedback', 'Yok')}\n\n"
                     f"*Taslak Cevap:*\n{result['response']}"
                 )
-
                 await update.message.reply_text(response_text, parse_mode="Markdown")
 
         except Exception as e:
@@ -709,6 +1094,9 @@ class CareerAssistantBot:
         Args:
             application: Telegram Application instance
         """
+        # Store bot instance for sending messages
+        self.bot = application.bot
+
         # Command handlers (admin only)
         application.add_handler(CommandHandler("start", self.start_command))
         application.add_handler(CommandHandler("reply", self.reply_command))
@@ -726,6 +1114,9 @@ class CareerAssistantBot:
                 self.handle_employer_message
             )
         )
+
+        # Callback query handler for inline keyboards
+        application.add_handler(CallbackQueryHandler(self.handle_callback_query))
 
         # Error handler
         async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -764,20 +1155,21 @@ class CareerAssistantBot:
             # Register handlers
             self._register_handlers(application)
 
-            # Set bot commands (async, need to run in context)
-            async def setup_and_run():
-                await self._set_bot_commands(application)
-                logger.info("Bot started. Polling for messages...")
+            # Add post_init handler to set commands after bot starts
+            async def post_init(application: Application) -> None:
+                try:
+                    await self._set_bot_commands(application)
+                except Exception as e:
+                    logger.error(f"Failed to set bot commands: {e}")
 
-                # Run the application with polling
-                await application.run_polling(
-                    drop_pending_updates=True,
-                    allowed_updates=["message"]
-                )
+            application.post_init = post_init
 
             # Run the bot
-            import asyncio
-            asyncio.run(setup_and_run())
+            logger.info("Bot started. Polling for messages...")
+            application.run_polling(
+                drop_pending_updates=True,
+                allowed_updates=["message", "callback_query"]
+            )
 
         except KeyboardInterrupt:
             logger.info("Bot stopped by user")

@@ -13,13 +13,7 @@ METRICS (1-5 scale):
 3. HELPFULNESS: Does it actually answer the employer's question?
 4. TONE: Is it professional, clear, and courteous?
 
-INTERVENTION TRIGGERS:
-Return trigger_human_intervention=true if employer message contains:
-- Salary/compensation negotiation (numbers like $90,000, "salary", "compensation")
-- Legal terms (NDA, contract, agreement terms)
-- Out-of-domain technical questions (outside CV expertise)
-- Ambiguous offers
-- Off-topic messages
+NOTE: Intervention detection is handled upstream. Your ONLY job is to evaluate response quality.
 
 OUTPUT FORMAT (JSON only):
 {{
@@ -29,7 +23,7 @@ OUTPUT FORMAT (JSON only):
   "tone_score": <1-5>,
   "overall_score": <average of 4 metrics, 1 decimal>,
   "is_approved": <overall_score >= 4.0>,
-  "trigger_human_intervention": <true/false>,
-  "intervention_reason": <"salary_negotiation" | "legal_question" | "out_of_domain" | "ambiguous_offer" | "off_topic" | null>,
+  "trigger_human_intervention": false,
+  "intervention_reason": null,
   "feedback": <constructive feedback for improvement>
 }}

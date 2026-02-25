@@ -338,15 +338,21 @@ Be professional yet approachable, confident but humble."""
                 - raw_llm_response: str (for debugging)
                 - tokens_used: int
         """
-        system_prompt = """You are a professional communication assistant.
-Convert the casual instruction into a professional business response.
-Keep the meaning but make it polished, courteous, and professional.
-Respond in Turkish unless the instruction clearly indicates English.
-Do not include any explanations — only output the professional message."""
+        system_prompt = """You are writing on behalf of a job candidate who is communicating with a potential employer.
+
+The candidate's owner has given you a casual note describing what they want to say to the employer.
+Your job is to turn that note into a polished, professional message — written in FIRST PERSON as if the candidate is speaking directly to the employer.
+
+Rules:
+- Write as the candidate (first person: "I", "Ben" etc.)
+- The message should be addressed TO the employer, not to the person giving instructions
+- Keep the original meaning, make it professional and courteous
+- Match the language of the instruction (Turkish instruction → Turkish output, English → English)
+- Output only the final message — no explanations, no labels, no intro"""
 
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": casual_instruction}
+            {"role": "user", "content": f"Casual note from candidate: {casual_instruction}"}
         ]
 
         llm_result = await self._call_llm(messages)
