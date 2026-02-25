@@ -64,9 +64,9 @@ career-agent/
 
 | Component | Technology | Durum |
 |-----------|------------|-------|
-| LLM Provider | OpenRouter | 🔗 Yapılacak |
-| Career Agent | `openai/gpt-4o-mini` | ⏳ Faz 2 |
-| Judge Agent | `minimax/minimax-m2.5` | ⏳ Faz 2 |
+| LLM Provider | OpenRouter | ✅ Tamamlandı |
+| Career Agent | `openai/gpt-4o-mini` | ✅ Faz 2.1 tamamlandı |
+| Judge Agent | `minimax/minimax-m2.5` | ⏳ Faz 2.2 sonraki |
 | Bot | Telegram Bot API (`python-telegram-bot`) | ⏳ Faz 3 |
 | Backend | Python + FastAPI | ⏳ Faz 5 |
 | Frontend | React + Vite + TailwindCSS + Recharts | ⏳ Faz 5 |
@@ -172,7 +172,7 @@ APPROVAL_THRESHOLD=4.0
 | Faz | Durum |
 |-----|-------|
 | Faz 1 — Temel Altyapı | ✅ Tamamlandı |
-| Faz 2 — Agent'lar | 🔄 Sonraki |
+| Faz 2 — Agent'lar | 🔄 Devam ediyor (2.1 ✅, 2.2 ⏳) |
 | Faz 3 — Telegram Bot | ⏳ Bekliyor |
 | Faz 4 — EvalOps & Loglama | ⏳ Bekliyor |
 | Faz 5 — Dashboard | ⏳ Bekliyor |
@@ -187,11 +187,23 @@ APPROVAL_THRESHOLD=4.0
 - ✅ CV (3545 karakter) → 8 chunk olarak ChromaDB'ye indexlendi
 - ✅ `.gitignore`'da hassas data dosyaları hariç tutuluyor
 
-### Şu anki sonraki adım (Faz 2):
-1. Career Agent'ı OpenRouter'a bağla (`agent/career_agent.py`)
-2. Judge Agent'ı OpenRouter'a bağla (`agent/evaluator_agent.py`)
-3. Prompt dosyalarını yaz (`prompts/career_prompt.txt`, `prompts/evaluator_prompt.txt`)
-4. EvalOps loop'unu test et
+### Faz 2 Tamamlananlar (2.1 - Career Agent):
+- ✅ `agent/career_agent.py` — Ana CareerAgent sınıfı
+- ✅ `agent/prompts/career_prompt.txt` — Kapsamlı sistem promptu
+- ✅ Async OpenRouter API bağlantısı (httpx)
+- ✅ Retry logic (3x, exponential backoff)
+- ✅ Graceful fallback (API hatasında Türkçe mesaj)
+- ✅ Conversation history yönetimi (history.json)
+- ✅ CV context (ChromaDB RAG) entegrasyonu
+- ✅ `professionalize_instruction()` — /reply komutu için
+- ✅ 12 unit test (%100 coverage)
+- ✅ Docker container içinde test edildi
+
+### Şu anki sonraki adım (Faz 2.2):
+1. Judge Agent'ı implement et (`agent/evaluator_agent.py`)
+2. Judge prompt'ını yaz (`prompts/evaluator_prompt.txt`)
+3. 4 metrik için JSON çıktısı ürettir
+4. Revizyon loop'unu test et (max 3 iterasyon)
 
 ## 🎓 Proje Türü
 

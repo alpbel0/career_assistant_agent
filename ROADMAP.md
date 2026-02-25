@@ -44,16 +44,19 @@
 
 ---
 
-## 2. 🔄 FAZ 2 — Agent'lar — SONRAKİ
+## 2. 🔄 FAZ 2 — Agent'lar — DEVAM EDİYOR
 
-### 2.1 Career Agent (`agent/career_agent.py`)
-- [ ] OpenRouter API bağlantısını kur
-- [ ] `CAREER_AGENT_MODEL=openai/gpt-4o-mini` ile ilk test çağrısını yap
-- [ ] `prompts/career_prompt.txt` sistem promptunu yaz
-- [ ] CV context'i prompta enjekte eden fonksiyonu yaz
-- [ ] Memory desteği ekle — `history.json` üzerinden her employer için ayrı konuşma geçmişi tut
-- [ ] Human talimatını profesyonelleştiren fonksiyonu yaz (`/reply` komutu için)
-- [ ] Agent'ı test et: mülakat daveti, teknik soru, teklif reddi
+### 2.1 Career Agent (`agent/career_agent.py`) ✅ TAMAMLANDI
+- [x] OpenRouter API bağlantısını kur (async httpx)
+- [x] `CAREER_AGENT_MODEL=openai/gpt-4o-mini` ile test çağrısı
+- [x] `prompts/career_prompt.txt` sistem promptu
+- [x] CV context'i prompta enjekte eden fonksiyon (ChromaDB RAG entegrasyonu)
+- [x] Memory desteği — `history.json` üzerinden per-employer konuşma geçmişi
+- [x] Human talimatını profesyonelleştiren fonksiyon (`/reply` komutu için)
+- [x] Retry logic (3x, exponential backoff)
+- [x] Graceful fallback (API hatasında Türkçe mesaj)
+- [x] 12 unit test (%100 coverage)
+- [x] Agent test edildi: mülakat daveti, professionalize instruction
 
 ### 2.2 Judge Agent (`agent/evaluator_agent.py`)
 - [ ] `JUDGE_AGENT_MODEL=minimax/minimax-m2.5` ile bağlantıyı test et
