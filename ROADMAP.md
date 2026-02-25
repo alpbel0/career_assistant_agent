@@ -101,14 +101,9 @@
 - [x] `/remove_info <metin>` — CV'den bilgi sil (admin only)
 
 ### 3.3 Admin Bildirimleri ✅ TAMAMLANDI
-- [x] Cevap onaylandığında skor ve iterasyon bilgisi
-- [x] Intervention tetiklendiğinde alert:
-  ```
-  ⚠️ INTERVENTION GEREKLİ
-  Sebep: salary_negotiation
-  İşveren Mesajı: ...
-  Taslak Cevap: ...
-  ```
+- [x] Yeni işveren mesajı geldiğinde bildirim (employer_id + mesaj)
+- [x] Cevap onaylandığında bildirim (skor detayları + gönderilen cevap)
+- [x] Intervention tetiklendiğinde alert + inline butonlar
 - [x] Max iterasyon aşıldığında uyarı
 
 ### 3.4 İnsan Müdahalesi Tetikleyicileri ✅ TAMAMLANDI (EvaluatorAgent içinde)
@@ -145,14 +140,14 @@
 - [ ] CSV'yi kontrol et, eksik/hatalı satır var mı bak
 ---
 
-## 5. ⏳ FAZ 5 — Dashboard (React)
+## 5. 🔄 FAZ 5 — Dashboard (React)
 
-### 5.1 FastAPI Kurulumu (`api/main.py`)
-- [ ] `fastapi` ve `uvicorn` dependency'lerini ekle
-- [ ] `/logs` endpoint'i yaz — `logs.csv`'yi okuyup JSON döner
-- [ ] `/stats` endpoint'i yaz — özet istatistikleri döner
-- [ ] CORS ayarlarını yap (React'tan erişim için)
-- [ ] Docker'a FastAPI servisini ekle
+### 5.1 FastAPI Kurulumu (`api/main.py`) ✅ TAMAMLANDI
+- [x] `fastapi` ve `uvicorn` dependency'leri mevcut (`requirements.txt`)
+- [x] `GET /logs` endpoint'i — `logs.csv`'yi JSON döner
+- [x] `GET /stats` endpoint'i — özet istatistikler döner
+- [x] CORS ayarları yapıldı (React'tan erişim için)
+- [x] Docker'a FastAPI servisi eklendi (`docker-compose.yml` — `api` servisi, port 8001)
 
 ### 5.2 React Kurulumu
 - [ ] `dashboard/` klasöründe yeni React projesi oluştur (`vite` ile)

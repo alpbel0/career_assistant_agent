@@ -545,55 +545,16 @@ class CareerAssistantBot:
             logger.error(f"Error in /remove_info command: {e}")
             await update.message.reply_text(f"❌ Bilgi silinemedi: {str(e)}")
 
-    def _check_intervention_keywords(self, message: str) -> tuple[bool, str]:
+    async def _classify_intervention(self, message: str) -> tuple[bool, str]:
         """
-        Hızlı keyword tabanlı intervention kontrolü.
-        LLM çağrısı yapılmadan önce çalışır.
+        LLM tabanlı intervention sınıflandırıcı.
+        Farklı ifadeler ve dolaylı anlatımlar da yakalanır.
 
         Returns:
             (should_intervene: bool, reason: str | None)
         """
-        import re
-        lower = message.lower()
-
-        # Maaş / ücret pazarlığı
-        salary_patterns = [
-            r'\$\s*\d+', r'\d+\s*\$',
-            'salary', 'compensation', 'pay ', 'wage',
-            'maaş', 'ücret', 'maas', 'ucret',
-        ]
-        for p in salary_patterns:
-            if re.search(p, lower):
-                return True, 'salary_negotiation'
-
-        # Hukuki sorular
-        legal_keywords = [
-            'nda', 'non-disclosure', 'contract', 'agreement',
-            'sözleşme', 'sozlesme', 'kontrat', 'legal', 'clause',
-        ]
-        if any(k in lower for k in legal_keywords):
-            return True, 'legal_question'
-
-        # Belirsiz teklif
-        offer_patterns = [
-            r'we have an? offer',
-            r'teklifimiz var', r'iş teklifimiz',
-            r'join our team', r'ekibimize katıl',
-        ]
-        for p in offer_patterns:
-            if re.search(p, lower):
-                return True, 'ambiguous_offer'
-
-        # Spam / konu dışı
-        spam_patterns = [
-            r'buy.{0,10}now', r'click here', r'free trial',
-            r'win.{0,10}prize', r'congratulations.{0,20}winner',
-        ]
-        for p in spam_patterns:
-            if re.search(p, lower):
-                return True, 'off_topic'
-
-        return False, None
+        result = await self.career_agent.classify_message(message)
+        return result["needs_intervention"], result["reason"]
 
     async def _generate_with_revision_loop(
         self,
@@ -934,14 +895,29 @@ class CareerAssistantBot:
 
         logger.info(f"Processing message from {employer_id}: {employer_message[:50]}...")
 
+        # ─ Admin'e yeni mesaj bildirimi (sadece işverenden geliyorsa)
+        if not is_admin:
+            try:
+                await self.bot.send_message(
+                    chat_id=self.admin_chat_id,
+                    text=(
+                        f"📨 *Yeni İşveren Mesajı*\n\n"
+                        f"*Gönderen:* `{employer_id}`\n"
+                        f"*Mesaj:* {employer_message[:200]}"
+                    ),
+                    parse_mode="Markdown"
+                )
+            except Exception as e:
+                logger.error(f"Failed to send new-message notification to admin: {e}")
+
         # Send typing indicator
         await update.message.chat.send_action("typing")
 
         try:
             # ─────────────────────────────────────────────────────────────────
-            # PRE-CHECK 1: Keyword tabanlı intervention (LLM çağrısı yok)
+            # PRE-CHECK 1: LLM tabanlı intervention sınıflandırması
             # ─────────────────────────────────────────────────────────────────
-            should_intervene, intervention_reason = self._check_intervention_keywords(employer_message)
+            should_intervene, intervention_reason = await self._classify_intervention(employer_message)
             if should_intervene:
                 logger.info(f"🚨 Pre-check intervention: {intervention_reason}")
                 self.stats["interventions_triggered"] += 1
@@ -1064,10 +1040,31 @@ class CareerAssistantBot:
                         f"*İterasyon:* `{result['iterations']}`\n\n"
                         f"*Cevap:*\n{result['response']}"
                     )
+                    await update.message.reply_text(response_text, parse_mode="Markdown")
                 else:
-                    response_text = result["response"]
+                    # İşverene cevabı gönder
+                    await update.message.reply_text(result["response"])
 
-                await update.message.reply_text(response_text, parse_mode="Markdown")
+                    # Admin'e onay bildirimi gönder
+                    try:
+                        eval_data = result["evaluation"]
+                        await self.bot.send_message(
+                            chat_id=self.admin_chat_id,
+                            text=(
+                                f"✅ *Cevap Onaylandı & Gönderildi*\n\n"
+                                f"*İşveren:* `{employer_id}`\n"
+                                f"*Skor:* `{eval_data['overall_score']}` "
+                                f"(T:`{eval_data['truthfulness_score']}` "
+                                f"R:`{eval_data['robustness_score']}` "
+                                f"H:`{eval_data['helpfulness_score']}` "
+                                f"To:`{eval_data['tone_score']}`)"
+                                f"\n*İterasyon:* `{result['iterations']}`\n\n"
+                                f"*Gönderilen Cevap:*\n{result['response'][:300]}"
+                            ),
+                            parse_mode="Markdown"
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to send approval notification to admin: {e}")
             else:
                 # Max iterations reached without approval
                 response_text = (

@@ -348,6 +348,8 @@ Rules:
 - The message should be addressed TO the employer, not to the person giving instructions
 - Keep the original meaning, make it professional and courteous
 - Match the language of the instruction (Turkish instruction → Turkish output, English → English)
+- If you use a salutation, use "Sayın Yetkili" — NEVER write "Sayın [İşverenin Adı]" or any placeholder
+- If you add a closing signature, use "Yiğitalp BEL" — NEVER write "Ben" or "Saygılarımla, Ben"
 - Output only the final message — no explanations, no labels, no intro"""
 
         messages = [
@@ -362,6 +364,56 @@ Rules:
             "raw_llm_response": llm_result["raw_response"],
             "tokens_used": llm_result["tokens_used"]
         }
+
+    async def classify_message(self, employer_message: str) -> Dict[str, Any]:
+        """
+        LLM tabanlı intervention sınıflandırıcısı.
+        Keyword yerine LLM karar verir — farklı ifadeler de yakalanır.
+
+        Returns:
+            {"needs_intervention": bool, "reason": str | None}
+            reason: salary_negotiation | legal_question | ambiguous_offer | off_topic | None
+        """
+        system_prompt = """You are an intervention classifier for a career assistant chatbot.
+
+A career assistant bot automatically responds to employer messages on behalf of a job candidate.
+Some messages require HUMAN intervention and should NOT be handled automatically.
+
+Intervention is needed when:
+- salary_negotiation: Message discusses salary, compensation, pay, equity, benefits amounts, bonuses
+- legal_question: Message mentions contracts, NDA, legal clauses, agreements to sign, terms
+- ambiguous_offer: Message contains a job offer that needs clarification or acceptance/rejection decision
+- off_topic: Message is spam, completely unrelated to recruitment, or seems malicious
+
+Normal questions about experience, skills, availability, interview scheduling, job details = NO intervention.
+
+Return ONLY valid JSON, no markdown, no explanation:
+{"needs_intervention": true, "reason": "salary_negotiation"}
+or
+{"needs_intervention": false, "reason": null}"""
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"Employer message: {employer_message}"}
+        ]
+
+        result = await self._call_llm(messages, max_tokens=60)
+        content = result["content"].strip()
+
+        try:
+            # Markdown kod bloğunu temizle
+            if "```" in content:
+                content = content.split("```")[1]
+                if content.startswith("json"):
+                    content = content[4:]
+            parsed = json.loads(content.strip())
+            return {
+                "needs_intervention": bool(parsed.get("needs_intervention", False)),
+                "reason": parsed.get("reason") or None
+            }
+        except (json.JSONDecodeError, KeyError, IndexError):
+            # Parse hatası → güvenli varsayılan
+            return {"needs_intervention": False, "reason": None}
 
     def get_conversation_summary(self, employer_id: str) -> Dict[str, Any]:
         """
