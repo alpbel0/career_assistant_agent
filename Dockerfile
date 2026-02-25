@@ -16,7 +16,4 @@ COPY . .
 # ChromaDB data dizini için env var
 ENV CHROMADB_PERSIST_DIR=./data/chromadb
 
-COPY start.sh .
-RUN chmod +x start.sh
-
-CMD ["./start.sh"]
+CMD ["python", "-m", "bot.telegram_bot"]
