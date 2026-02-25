@@ -1,0 +1,31 @@
+YİĞİTALP BEL
+LLM Evaluation Engineer | RAG & EvalOps | Computer Engineering Student
+
+|0545 583 15 43|yigitalpbel0@gmail.com|github.com/alpbel0|LinkedIn 
+ ÖZET
+Akdeniz Üniversitesi'nde 3. sınıf Bilgisayar Mühendisliği öğrencisi olarak EvalOps, RAG mimarileri ve güvenilir AI sistem tasarımı üzerine uzmanlaşıyorum. MentorMind ve DataNeuron projelerimde LLM'leri uçtan uca entegre ederek halüsinasyonu minimize eden ve ölçeklenebilir sistemler geliştirdim. Klasik makine öğrenmesi altyapımı modern AI mimarileriyle birleştirerek endüstriyel ölçekteki problemlere çözüm üretmeye odaklanıyorum.
+PROJELER	
+
+      MentorMind - AI Evaluator Training System | github.com/alpbel0/MentorMind
+•	EvalOps (LLM Evaluation Operations) alanında, insan değerlendiricilerin AI model yanıtlarını sistematik ve ölçeklenebilir şekilde test etmesini sağlayan uçtan uca bir eğitim platformu tasarladım.
+•	Multi-Model Pipeline: Claude Haiku 4.5 ile domain-specific red-teaming soruları üreten; Mistral, LLaMA, DeepSeek gibi 6 farklı modelin yanıtlarını tek platformda toplayan çok modelli bir veri pipeline'ı kurdum.
+•	Kullanıcı değerlendirmelerini Truthfulness, Helpfulness, Safety, Bias, Clarity, Consistency, Efficiency ve Robustness olmak üzere 8 ana metrik üzerinden yapılandırdım.
+•	Blind Evaluation & 5-Stage Verification: Bias'ı önlemek için GPT-4o'yu 2 aşamalı Judge model olarak entegre ettim. Modelin kanıt gösterirken yaşadığı halüsinasyon ve indeks kayması zafiyetini çözmek için 5 Aşamalı Deterministik Kanıt Doğrulama Algoritması yazdım; hatalı kanıt eşleşmelerini izole ederek sistemin güvenilirliğini maksimize ettim.
+•	Memory & RAG: ChromaDB vektör veritabanını kullanarak kullanıcının geçmiş değerlendirme pattern'lerini analiz eden ve sisteme hafıza kazandıran kişiselleştirilmiş bir feedback pipeline'ı geliştirdim.
+DataNeuron - Akıllı Doküman Asistanı | https://github.com/alpbel0/dataneuron | https://dataneuron- ai.streamlit.app/
+•	      Yapısal olmayan dokümanları (.pdf, .txt, .docx) analiz edip doğal dil sorgularına kaynakçalı cevaplar üreten, RAG mimarisine dayalı uçtan uca bir AI Agent sistemi sıfırdan tasarladım ve canlıya aldım.
+•	      RAG Pipeline: LangChain ile retrieval pipeline'ı kurdum; OpenAI Embedding modelleriyle metinleri vektörleştirip ChromaDB'de indeksleyerek hibrit sorgulama (web fallback) ile halüsinasyon riskini minimize ettim.
+•	      Yazılım Mimarisi: core, tests, config gibi modüler klasör yapısı tasarlayarak projenin sürdürülebilirliğini ve test edilebilirliğini garantiledim.
+•	      Deployment: Streamlit Community Cloud üzerinde canlıya alarak herkesin kullanımına sundum.
+
+NBA Maç Sonucu Tahminleme Sistemi | https://github.com/alpbel0/nba-prediction-app | https://nba-prediction- app.streamlit.app/
+
+•	Uçtan Uca Veri Bilimi: 10'dan fazla kaynaktan gelen dağınık ve gürültülü NBA verilerini (%15'i eksik) temizleyerek, model performansını doğrudan etkileyen tutarlı bir veri seti inşa ettim.
+•	Özellik Mühendisliği & Optimizasyon: Takımların son 5 maçlık formu gibi 5'ten fazla yeni özellik türeterek ve farklı algoritmaları (Logistic Regression, SVM, Random Forest) karşılaştırarak, modelin doğruluk oranını %65'ten
+%76'ya yükselttim.
+•	İnteraktif Sunum: Eğitilmiş modeli, kullanıcıların kolayca etkileşime girebileceği bir web uygulaması olarak Streamlit üzerinden yayınladım.
+
+       TEKNİK YETENEKLER & ARAÇLAR
+
+•	AI / EvalOps: LLM Evaluation , LangChain, ChromaDB, Prompt Engineering, RAG Mimarileri, 
+•	Yazılım & Sistem: Python, SQL, PostgreSQL (Neon DB), Docker, Git/GitHub, Linux (WSL), Streamlit

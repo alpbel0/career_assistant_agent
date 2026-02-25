@@ -50,7 +50,6 @@ htmlcov/
 logs/*.log
 
 # Data (sensitive)
-data/cv.txt
 data/history.json
 data/logs.csv
 data/chromadb/
