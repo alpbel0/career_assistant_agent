@@ -29,5 +29,3 @@ NBA Maç Sonucu Tahminleme Sistemi | https://github.com/alpbel0/nba-prediction-a
 
 •	AI / EvalOps: LLM Evaluation , LangChain, ChromaDB, Prompt Engineering, RAG Mimarileri, 
 •	Yazılım & Sistem: Python, SQL, PostgreSQL (Neon DB), Docker, Git/GitHub, Linux (WSL), Streamlit
-
-burada istanbulda oturduğumu yaz

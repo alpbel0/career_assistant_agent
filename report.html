@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Career Assistant AI Agent — Project Report</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f7fa; color: #222; line-height: 1.7; }
+
+  .cover {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: white; padding: 80px 60px; min-height: 280px;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .cover h1 { font-size: 2.4rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 10px; }
+  .cover .subtitle { font-size: 1.1rem; opacity: 0.75; margin-bottom: 30px; }
+  .cover .meta { display: flex; gap: 40px; flex-wrap: wrap; }
+  .cover .meta-item { display: flex; flex-direction: column; }
+  .cover .meta-item span:first-child { font-size: 0.75rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 1px; }
+  .cover .meta-item span:last-child { font-size: 1rem; font-weight: 600; }
+  .cover a { color: #64b5f6; text-decoration: none; }
+  .cover a:hover { text-decoration: underline; }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 40px 30px; }
+
+  h2 { font-size: 1.5rem; color: #0f3460; border-left: 4px solid #e94560; padding-left: 12px; margin: 40px 0 16px; }
+  h3 { font-size: 1.1rem; color: #333; margin: 24px 0 10px; }
+  p { margin-bottom: 12px; color: #444; }
+
+  .card {
+    background: white; border-radius: 10px; padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07); margin-bottom: 20px;
+  }
+
+  .tech-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-top: 12px; }
+  .tech-item {
+    background: #f0f4ff; border-radius: 8px; padding: 12px 16px;
+    border-left: 3px solid #0f3460;
+  }
+  .tech-item .label { font-size: 0.72rem; text-transform: uppercase; color: #888; letter-spacing: 0.5px; }
+  .tech-item .value { font-weight: 600; color: #0f3460; font-size: 0.9rem; }
+
+  /* Workflow */
+  .workflow {
+    background: white; border-radius: 10px; padding: 30px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07); margin-bottom: 20px;
+  }
+  .flow-chain { display: flex; flex-direction: column; gap: 0; align-items: center; }
+  .flow-step {
+    background: #0f3460; color: white; border-radius: 8px;
+    padding: 12px 28px; font-size: 0.9rem; font-weight: 500;
+    text-align: center; width: 360px; position: relative;
+  }
+  .flow-step.green { background: #1b5e20; }
+  .flow-step.red { background: #b71c1c; }
+  .flow-step.orange { background: #e65100; }
+  .flow-step.gray { background: #455a64; }
+  .flow-step small { display: block; font-size: 0.75rem; opacity: 0.8; margin-top: 2px; }
+  .flow-arrow { font-size: 1.4rem; color: #aaa; line-height: 1; margin: 2px 0; }
+  .flow-branch {
+    display: flex; gap: 20px; align-items: flex-start; margin: 2px 0;
+  }
+  .flow-branch-side { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .flow-step-sm {
+    background: #1b5e20; color: white; border-radius: 8px;
+    padding: 10px 18px; font-size: 0.82rem; font-weight: 500;
+    text-align: center; width: 170px;
+  }
+  .flow-step-sm.red { background: #b71c1c; }
+  .flow-label { font-size: 0.72rem; color: #888; text-align: center; margin: 2px 0; }
+
+  /* Metrics */
+  .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px; }
+  .metric-card {
+    background: #f0f4ff; border-radius: 8px; padding: 16px;
+    text-align: center; border-top: 3px solid #0f3460;
+  }
+  .metric-card .name { font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+  .metric-card .desc { font-size: 0.82rem; color: #444; margin-top: 6px; }
+
+  /* Test Cases */
+  .test-case {
+    background: white; border-radius: 10px; padding: 20px 24px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 14px;
+    border-left: 4px solid #0f3460;
+  }
+  .test-case.approved { border-left-color: #2e7d32; }
+  .test-case.intervention { border-left-color: #e65100; }
+  .test-case .tc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .test-case h4 { font-size: 0.95rem; color: #222; }
+  .badge {
+    padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge.approved { background: #e8f5e9; color: #2e7d32; }
+  .badge.intervened { background: #fff3e0; color: #e65100; }
+  .tc-msg { background: #f5f7fa; border-radius: 6px; padding: 10px 14px; font-size: 0.88rem; color: #555; margin-bottom: 10px; font-style: italic; }
+  .tc-response { background: #f0f4ff; border-radius: 6px; padding: 10px 14px; font-size: 0.88rem; color: #333; margin-bottom: 10px; }
+  .tc-scores { display: flex; gap: 10px; flex-wrap: wrap; }
+  .tc-score { font-size: 0.78rem; background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 4px; }
+  .tc-score.warn { background: #fff3e0; color: #e65100; }
+
+  /* Screenshot section */
+  .screenshots { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
+  .screenshot-box {
+    background: white; border-radius: 8px; overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .screenshot-box img { width: 100%; display: block; }
+  .screenshot-box .caption { padding: 8px 12px; font-size: 0.78rem; color: #666; background: #f9f9f9; }
+
+  /* Intervention triggers */
+  .trigger-list { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .trigger-list li {
+    background: #fff3e0; border-radius: 6px; padding: 8px 14px;
+    font-size: 0.85rem; color: #bf360c; border-left: 3px solid #e65100;
+  }
+  .trigger-list li span { font-weight: 700; }
+
+  /* Architecture */
+  .arch-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.88rem; }
+  .arch-table th { background: #0f3460; color: white; padding: 10px 14px; text-align: left; }
+  .arch-table td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+  .arch-table tr:hover td { background: #f5f7fa; }
+  .status-done { color: #2e7d32; font-weight: 600; }
+
+  /* Reflection */
+  .reflection-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
+  .ref-card { background: white; border-radius: 8px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .ref-card h4 { font-size: 0.9rem; color: #0f3460; margin-bottom: 8px; }
+  .ref-card ul { list-style: disc; padding-left: 18px; }
+  .ref-card ul li { font-size: 0.85rem; color: #555; margin-bottom: 4px; }
+
+  footer { text-align: center; padding: 30px; color: #aaa; font-size: 0.82rem; border-top: 1px solid #eee; margin-top: 20px; }
+
+  @media print {
+    body { background: white; }
+    .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <h1>Career Assistant AI Agent</h1>
+  <p class="subtitle">An EvalOps-based multi-agent system for automated employer communication</p>
+  <div class="meta">
+    <div class="meta-item"><span>Student</span><span>Yiğitalp BEL</span></div>
+    <div class="meta-item"><span>Student ID</span><span>20220808060</span></div>
+    <div class="meta-item"><span>Date</span><span>February 25, 2026</span></div>
+    <div class="meta-item"><span>GitHub</span><span><a href="https://github.com/alpbel0/career_assistant_agent" target="_blank">alpbel0/career_assistant_agent</a></span></div>
+    <div class="meta-item"><span>Live API</span><span><a href="https://odd-lissa-alpbel0-961641e0.koyeb.app" target="_blank">Koyeb (Bot + API)</a></span></div>
+    <div class="meta-item"><span>Dashboard</span><span><a href="https://alpbel0.github.io/career_assistant_agent/" target="_blank">GitHub Pages</a></span></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- 1. PROJECT OVERVIEW -->
+  <h2>1. Project Overview</h2>
+  <div class="card">
+    <p>
+      The Career Assistant AI Agent is a self-evaluating, multi-agent system that automates professional communication with potential employers via Telegram. The system uses two LLMs in a pipeline: a <strong>Career Agent</strong> that generates responses and a <strong>Judge Agent</strong> that evaluates them against four EvalOps metrics. Only responses that score above the approval threshold are sent to the employer. Responses that fail are revised iteratively, while sensitive topics automatically route to human oversight.
+    </p>
+    <p>
+      The project covers the full LLMOps lifecycle: prompt engineering, retrieval-augmented generation (RAG) via ChromaDB, LLM-as-a-Judge evaluation, human-in-the-loop intervention routing, interaction logging, and a real-time monitoring dashboard.
+    </p>
+  </div>
+
+  <!-- 2. TECH STACK -->
+  <h2>2. Technology Stack</h2>
+  <div class="tech-grid">
+    <div class="tech-item"><div class="label">Career Agent</div><div class="value">GPT-4o-mini (OpenRouter)</div></div>
+    <div class="tech-item"><div class="label">Judge Agent</div><div class="value">Gemini 2.0 Flash (OpenRouter)</div></div>
+    <div class="tech-item"><div class="label">Vector Store</div><div class="value">ChromaDB (cosine, RAG)</div></div>
+    <div class="tech-item"><div class="label">Telegram Bot</div><div class="value">python-telegram-bot ≥21</div></div>
+    <div class="tech-item"><div class="label">Backend API</div><div class="value">FastAPI + Uvicorn</div></div>
+    <div class="tech-item"><div class="label">Dashboard</div><div class="value">React + Vite + Recharts</div></div>
+    <div class="tech-item"><div class="label">Bot Hosting</div><div class="value">Koyeb (Docker container)</div></div>
+    <div class="tech-item"><div class="label">Dashboard Hosting</div><div class="value">GitHub Pages</div></div>
+    <div class="tech-item"><div class="label">Logging</div><div class="value">CSV (HuggingFace ready)</div></div>
+    <div class="tech-item"><div class="label">Containerization</div><div class="value">Docker + docker-compose</div></div>
+  </div>
+
+  <!-- 3. SYSTEM WORKFLOW -->
+  <h2>3. System Workflow</h2>
+  <div class="workflow">
+    <div class="flow-chain">
+      <div class="flow-step">📱 Employer sends message via Telegram</div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-step">🔍 LLM Intervention Classifier<small>salary / legal / ambiguous offer?</small></div>
+      <div class="flow-arrow">↓</div>
+
+      <!-- Branch: intervention yes/no -->
+      <div class="flow-branch">
+        <div class="flow-branch-side">
+          <div class="flow-label">YES → Sensitive topic</div>
+          <div class="flow-step-sm red">🚨 INTERVENTION<br>Pause + Alert Admin</div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step-sm red">Admin reviews &amp; replies<br>via /reply command</div>
+        </div>
+        <div style="font-size:1.8rem;color:#ccc;align-self:center;">|</div>
+        <div class="flow-branch-side">
+          <div class="flow-label">NO → Normal question</div>
+          <div class="flow-step">🤖 Career Agent generates response<small>CV context via ChromaDB RAG</small></div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step gray">⚖️ Judge Agent evaluates<small>Truthfulness · Robustness · Helpfulness · Tone</small></div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-branch">
+            <div class="flow-branch-side">
+              <div class="flow-label">Score ≥ 4.0</div>
+              <div class="flow-step-sm">✅ Send to employer<br>Log to CSV</div>
+            </div>
+            <div style="font-size:1.8rem;color:#ccc;"></div>
+            <div class="flow-branch-side">
+              <div class="flow-label">Score &lt; 4.0 (max 3x)</div>
+              <div class="flow-step-sm red">🔄 Revise with<br>Judge feedback</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow">↓</div>
+      <div class="flow-step green">📊 Logged → FastAPI → React Dashboard</div>
+    </div>
+  </div>
+
+  <!-- 4. EVALOPS METRICS -->
+  <h2>4. EvalOps Evaluation Metrics</h2>
+  <div class="card">
+    <p>The Judge Agent (Gemini 2.0 Flash) evaluates every generated response on a <strong>1–5 scale</strong> across four dimensions. Responses must achieve an <strong>overall score ≥ 4.0</strong> to be sent automatically.</p>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="name">Truthfulness</div>
+        <div class="desc">Grounded in CV facts — no hallucination or invented details</div>
+      </div>
+      <div class="metric-card">
+        <div class="name">Robustness</div>
+        <div class="desc">Resistant to prompt injection and off-topic manipulation</div>
+      </div>
+      <div class="metric-card">
+        <div class="name">Helpfulness</div>
+        <div class="desc">Directly addresses the employer's question or request</div>
+      </div>
+      <div class="metric-card">
+        <div class="name">Tone</div>
+        <div class="desc">Professional, clear, and polite language throughout</div>
+      </div>
+    </div>
+    <p style="margin-top:16px;">The judge also detects sensitive topics and sets <code>trigger_human_intervention: true</code> when needed, with a structured reason field.</p>
+  </div>
+
+  <!-- 5. HUMAN INTERVENTION -->
+  <h2>5. Human Intervention Triggers</h2>
+  <div class="card">
+    <p>The system uses an LLM-based classifier (not keywords) to detect messages that require human judgment before responding. When triggered, the bot pauses and notifies the admin via Telegram with the full context and action buttons.</p>
+    <ul class="trigger-list">
+      <li><span>💰 Salary Negotiation</span> — Specific salary/equity numbers discussed</li>
+      <li><span>⚖️ Legal Questions</span> — Contracts, NDA, terms to sign</li>
+      <li><span>🌫️ Ambiguous Offers</span> — Formal offer needing acceptance/rejection</li>
+      <li><span>❓ [UNCERTAIN]</span> — Agent cannot answer from CV context</li>
+    </ul>
+    <p style="margin-top:12px;">Admin receives action buttons: <strong>"Send Draft"</strong> or <strong>"Write Custom"</strong> (via <code>/reply</code> command which then shows a <strong>"Send"</strong> button for delivery).</p>
+  </div>
+
+  <!-- 6. TEST CASES -->
+  <h2>6. Test Cases &amp; Results</h2>
+
+  <div class="test-case approved">
+    <div class="tc-header">
+      <h4>Test 1 — Interview Invitation (Turkish)</h4>
+      <span class="badge approved">✅ Approved — Score 4.5</span>
+    </div>
+    <div class="tc-msg">"Teknik mülakat için sizi davet etmek istiyoruz, önümüzdeki hafta müsait misiniz?"</div>
+    <div class="tc-response">Bot Response: "İlginiz için teşekkür ederim! Teklif ettiğiniz teknik görüşme için mevcut durumum hakkında kesin bir tarih vermem mümkün değil. Görüşmeye katılmayı dört gözle bekliyorum."</div>
+    <div class="tc-scores">
+      <span class="tc-score">T: 5.0</span><span class="tc-score">R: 4.0</span><span class="tc-score">H: 4.5</span><span class="tc-score">To: 4.5</span><span class="tc-score">Iterations: 1</span>
+    </div>
+  </div>
+
+  <div class="test-case approved">
+    <div class="tc-header">
+      <h4>Test 2 — Technical LLM Pipeline Question</h4>
+      <span class="badge approved">✅ Approved — Score 5.0</span>
+    </div>
+    <div class="tc-msg">"LLM değerlendirme pipeline'ları oluşturma konusundaki deneyiminizden bahseder misiniz?"</div>
+    <div class="tc-response">Bot Response: Detailed response about MentorMind AI Evaluator Training System project, Multi-Model Pipeline with Claude Haiku 4.5, 76% improvement in evaluation results, LangChain and RAG architectures — all grounded in CV context.</div>
+    <div class="tc-scores">
+      <span class="tc-score">T: 5.0</span><span class="tc-score">R: 5.0</span><span class="tc-score">H: 5.0</span><span class="tc-score">To: 5.0</span><span class="tc-score">Iterations: 1</span>
+    </div>
+  </div>
+
+  <div class="test-case intervention">
+    <div class="tc-header">
+      <h4>Test 3 — Salary Negotiation (Intervention Triggered)</h4>
+      <span class="badge intervened">🚨 Intervention — salary_negotiation</span>
+    </div>
+    <div class="tc-msg">"Pozisyon için 90.000 TL maaş artı hisse teklif ediyoruz, bu sizin için uygun mu?"</div>
+    <div class="tc-response">System correctly detected salary negotiation. Admin received intervention alert with "Send Draft" / "Write Custom" buttons. Admin used /reply command → "Bu konuları yüz yüze konuşmayı tercih ederim" → professionalized to "Sayın Yetkili, Bu konuları yüz yüze konuşmayı tercih ederim. Yiğitalp BEL" → Gönder button confirmed delivery.</div>
+    <div class="tc-scores">
+      <span class="tc-score warn">Intervention: salary_negotiation</span><span class="tc-score">Admin handled ✅</span>
+    </div>
+  </div>
+
+  <!-- 7. SYSTEM ARCHITECTURE -->
+  <h2>7. System Architecture</h2>
+  <table class="arch-table">
+    <thead>
+      <tr><th>Component</th><th>File</th><th>Description</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Career Agent</td><td><code>agent/career_agent.py</code></td><td>Response generation, history, RAG, professionalize, classify</td><td class="status-done">✅ Complete</td></tr>
+      <tr><td>Judge Agent</td><td><code>agent/evaluator_agent.py</code></td><td>4-metric evaluation, intervention detection, JSON output</td><td class="status-done">✅ Complete</td></tr>
+      <tr><td>Telegram Bot</td><td><code>bot/telegram_bot.py</code></td><td>Message handling, revision loop, admin commands, callbacks</td><td class="status-done">✅ Complete</td></tr>
+      <tr><td>CV Context</td><td><code>tools/cv_context.py</code></td><td>Hybrid RAG: ChromaDB for long CV, static for short</td><td class="status-done">✅ Complete</td></tr>
+      <tr><td>Logger</td><td><code>tools/logger.py</code></td><td>CSV logging per interaction, HuggingFace-compatible format</td><td class="status-done">✅ Complete</td></tr>
+      <tr><td>FastAPI</td><td><code>api/main.py</code></td><td>/logs, /stats, /health endpoints with CORS</td><td class="status-done">✅ Complete</td></tr>
+      <tr><td>Dashboard</td><td><code>dashboard/</code></td><td>React + Recharts real-time monitoring UI</td><td class="status-done">✅ Deployed</td></tr>
+      <tr><td>Vector DB</td><td><code>data/chromadb/</code></td><td>ChromaDB, cosine distance, 8 CV chunks</td><td class="status-done">✅ Complete</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 8. DESIGN DECISIONS -->
+  <h2>8. Key Design Decisions</h2>
+  <div class="card">
+    <h3>LLM-as-a-Judge over rule-based scoring</h3>
+    <p>Instead of hardcoded scoring rules, a separate LLM (Gemini 2.0 Flash) evaluates each response. This allows nuanced, context-aware evaluation that captures tone and coherence — things keyword matching cannot.</p>
+
+    <h3>LLM-based intervention classifier over keywords</h3>
+    <p>Keyword detection for sensitive topics (salary, legal) fails with alternative phrasings. An LLM classifier handles paraphrases, indirect language, and non-English inputs correctly.</p>
+
+    <h3>Hybrid CV context (static vs. RAG)</h3>
+    <p>For short CVs (&lt;2000 chars) the full text is injected directly into the prompt. For longer CVs, ChromaDB retrieves the most relevant chunks. This avoids context window waste while maintaining accuracy.</p>
+
+    <h3>Revision loop with feedback propagation</h3>
+    <p>When a response is rejected, the judge's <code>feedback</code> field is passed back to the career agent as explicit guidance. This creates a tight improvement loop rather than random retries.</p>
+  </div>
+
+  <!-- 9. FAILURE CASES & LESSONS -->
+  <h2>9. Failure Cases &amp; Lessons Learned</h2>
+  <div class="reflection-grid">
+    <div class="ref-card">
+      <h4>🔴 Failures Encountered</h4>
+      <ul>
+        <li>Bot hallucinated "14:00–17:00" availability — not in CV; fixed by tightening <code>[UNCERTAIN]</code> prompt rules</li>
+        <li>CV relevance pre-check blocked generic questions like "Tell me about yourself" — removed the check, delegated to Judge</li>
+        <li>LLM classifier flagged standard interview questions as off-topic — fixed with explicit negative examples in the prompt</li>
+        <li>Koyeb container had empty ChromaDB — CV was in .gitignore; fixed by committing cv.txt and re-indexing on startup</li>
+      </ul>
+    </div>
+    <div class="ref-card">
+      <h4>🟢 Lessons Learned</h4>
+      <ul>
+        <li>Prompt conflicts silently override each other — explicit, non-contradictory rules are critical</li>
+        <li>Conversation history can poison future responses — periodic inspection of history.json is necessary</li>
+        <li>LLM classifiers need explicit counter-examples, not just positive examples</li>
+        <li>Cloud deployments require CV data in the repo — stateful data cannot be assumed to persist</li>
+        <li>EvalOps is only as good as the judge prompt — judge quality directly affects the whole pipeline</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 10. CONCLUSION -->
+  <h2>10. Conclusion</h2>
+  <div class="card">
+    <p>
+      The Career Assistant AI Agent demonstrates a functional EvalOps pipeline applied to a real-world use case. The system successfully automates professional employer communication, evaluates its own outputs using a second LLM, routes sensitive topics to human oversight, and logs every interaction for monitoring.
+    </p>
+    <p>
+      The project is deployed end-to-end: the bot and API run on Koyeb, the monitoring dashboard runs on GitHub Pages, and all data flows through a structured pipeline with no manual intervention required for standard career queries. Test cases confirm the system handles interview invitations, technical questions, and salary negotiations correctly.
+    </p>
+    <p>
+      Future improvements would include persistent storage for logs across deployments, a feedback loop from admin approvals back into the judge's calibration, and a more sophisticated conversation memory system.
+    </p>
+  </div>
+
+</div>
+
+<footer>
+  Career Assistant AI Agent &nbsp;·&nbsp; Yiğitalp BEL — 20220808060 &nbsp;·&nbsp;
+  <a href="https://github.com/alpbel0/career_assistant_agent" style="color:#aaa;">github.com/alpbel0/career_assistant_agent</a>
+</footer>
+
+</body>
+</html>
