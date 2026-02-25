@@ -146,7 +146,11 @@ def check_cv_relevance(query: str) -> Tuple[bool, str, float]:
         docs = results["documents"][0]
         distances = results["distances"][0]
 
-        best_distance = min(distances) if distances else 2.0
+        # ChromaDB index boşsa (henüz index'lenmemiş) → relevant say
+        if not distances or not docs:
+            return True, cv_text[:1000], 0.0
+
+        best_distance = min(distances)
         context = "\n".join(docs)
 
         is_relevant = best_distance <= RELEVANCE_THRESHOLD

@@ -944,37 +944,6 @@ class CareerAssistantBot:
                 return
 
             # ─────────────────────────────────────────────────────────────────
-            # PRE-CHECK 2: CV relevance — konu CV'de var mı?
-            # ─────────────────────────────────────────────────────────────────
-            is_relevant, cv_context, distance = check_cv_relevance(employer_message)
-            logger.info(f"CV relevance: {is_relevant} (distance={distance:.3f})")
-
-            if not is_relevant:
-                logger.info(f"🚨 CV relevance intervention: topic not in CV (distance={distance:.3f})")
-                self.stats["interventions_triggered"] += 1
-                try:
-                    log_interaction(
-                        employer_id=employer_id,
-                        employer_message=employer_message,
-                        draft_response="",
-                        evaluation=None,
-                        final_response="",
-                        is_approved=False,
-                        iterations=0,
-                        intervention_triggered=True,
-                        intervention_reason="out_of_domain",
-                    )
-                except Exception as log_err:
-                    logger.error(f"Logging failed (non-critical): {log_err}")
-                await self._send_intervention_alert(
-                    update=update,
-                    reason="out_of_domain",
-                    message=employer_message,
-                    draft_response=""
-                )
-                return
-
-            # ─────────────────────────────────────────────────────────────────
             # MAIN FLOW: CV'de bilgi var → üret → değerlendir → gönder
             # ─────────────────────────────────────────────────────────────────
             result = await self._generate_with_revision_loop(
