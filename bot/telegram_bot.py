@@ -89,6 +89,10 @@ class CareerAssistantBot:
         # Track admin's drafted responses
         self.admin_drafts: Dict[str, str] = {}
 
+        # Track last employer who sent a message (for /reply without intervention)
+        self.last_employer_id: str = None
+        self.last_employer_user_id: int = None
+
         # Statistics
         self.stats = {
             "start_time": datetime.now().isoformat(),
@@ -246,12 +250,27 @@ class CareerAssistantBot:
                 casual_instruction
             )
 
-            response_text = (
-                "✅ *Professional Cevap:*\n\n"
-                f"{result['response']}"
-            )
+            professional_response = result['response']
 
-            await update.message.reply_text(response_text, parse_mode="Markdown")
+            if self.last_employer_id and self.last_employer_user_id:
+                # Store for direct send
+                self.admin_drafts[f"direct_{self.last_employer_id}"] = professional_response
+                keyboard = [[
+                    InlineKeyboardButton("✅ Gönder", callback_data=f"direct_send_{self.last_employer_id}"),
+                    InlineKeyboardButton("🚫 Sadece Önizle", callback_data="discard_preview"),
+                ]]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await update.message.reply_text(
+                    f"✅ *Professional Cevap:*\n\n{professional_response}\n\n"
+                    f"📤 *Gönderilecek:* `{self.last_employer_id}`",
+                    parse_mode="Markdown",
+                    reply_markup=reply_markup
+                )
+            else:
+                await update.message.reply_text(
+                    f"✅ *Professional Cevap:*\n\n{professional_response}",
+                    parse_mode="Markdown"
+                )
 
         except Exception as e:
             logger.error(f"Error in /reply command: {e}")
@@ -830,6 +849,33 @@ class CareerAssistantBot:
                 self.pending_interventions.pop(employer_id, None)
                 self.admin_drafts.pop(employer_id, None)
 
+            elif callback_data.startswith("direct_send_"):
+                employer_id = callback_data.replace("direct_send_", "")
+                professional_response = self.admin_drafts.get(f"direct_{employer_id}")
+
+                if not professional_response or self.last_employer_user_id is None:
+                    await query.edit_message_text("⚠️ İşlem bulunamadı veya zaman aşımına uğradı.")
+                    return
+
+                try:
+                    await context.bot.send_message(
+                        chat_id=self.last_employer_user_id,
+                        text=professional_response
+                    )
+                    await query.edit_message_text(
+                        f"✅ Mesaj `{employer_id}` adresine gönderildi:\n\n{professional_response}",
+                        parse_mode="Markdown"
+                    )
+                    logger.info(f"✅ Direct reply sent to employer {employer_id}")
+                except Exception as e:
+                    logger.error(f"Failed to send direct reply: {e}")
+                    await query.edit_message_text(f"❌ Gönderim başarısız: {e}")
+
+                self.admin_drafts.pop(f"direct_{employer_id}", None)
+
+            elif callback_data == "discard_preview":
+                await query.edit_message_text("🗑️ Önizleme silindi.")
+
             elif callback_data.startswith("retry_custom_"):
                 employer_id = callback_data.replace("retry_custom_", "")
 
@@ -892,6 +938,11 @@ class CareerAssistantBot:
             return
 
         self.stats["messages_processed"] += 1
+
+        # Track last employer for /reply command
+        if not is_admin:
+            self.last_employer_id = employer_id
+            self.last_employer_user_id = user_id
 
         logger.info(f"Processing message from {employer_id}: {employer_message[:50]}...")
 
