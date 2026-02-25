@@ -96,6 +96,9 @@
 - [x] `/reply <metin>` — Casual→Professional dönüşüm (admin only)
 - [x] `/show_cv` — CV'yi göster (text + document) (admin only)
 - [x] `/status` — Bot durumu ve istatistikler (admin only)
+- [x] `/update_cv` — CV dosyasını güncelle (.txt yükle) (admin only)
+- [x] `/add_info <metin>` — CV'ye bilgi ekle (admin only)
+- [x] `/remove_info <metin>` — CV'den bilgi sil (admin only)
 
 ### 3.3 Admin Bildirimleri ✅ TAMAMLANDI
 - [x] Cevap onaylandığında skor ve iterasyon bilgisi

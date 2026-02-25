@@ -138,7 +138,10 @@ class CareerAssistantBot:
             "*Kullanılabilir Komutlar:*\n"
             "/status — Bot durumunu göster\n"
             "/show_cv — CV'yi görüntüle\n"
-            "/reply <mesaj> — Casual→Professional dönüşüm\n\n"
+            "/reply <mesaj> — Casual→Professional dönüşüm\n"
+            "/update_cv — CV dosyasını güncelle (.txt yükle)\n"
+            "/add_info <metin> — CV'ye bilgi ekle\n"
+            "/remove_info <metin> — CV'den bilgi sil\n\n"
             "Bot herhangi bir mesajı aldığında otomatik olarak cevap üretir."
         )
 
@@ -263,6 +266,215 @@ class CareerAssistantBot:
         )
 
         await update.message.reply_text(status_text, parse_mode="Markdown")
+
+    async def update_cv_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """
+        /update_cv command — Update CV by uploading a new .txt file.
+
+        Usage: Send /update_cv with a document attachment
+        """
+        if not self._is_admin(update):
+            await update.message.reply_text(
+                "⛔ Bu komutu kullanma yetkiniz yok."
+            )
+            return
+
+        # Check if a document is attached
+        if not update.message.document:
+            await update.message.reply_text(
+                "ℹ️ Kullanım: /update_cv komutunu bir `.txt` dosyası ile birlikte gönderin.\n\n"
+                "Örnek:\n/update_cv\n[CV.txt dosyasını ekleyin]"
+            )
+            return
+
+        document = update.message.document
+
+        # Check file extension
+        if not document.file_name.endswith('.txt'):
+            await update.message.reply_text(
+                "⚠️ Lütfen sadece `.txt` formatında dosya yükleyin."
+            )
+            return
+
+        try:
+            # Send processing message
+            await update.message.reply_text("⏳ CV güncelleniyor...")
+
+            # Download the file
+            file = await document.get_file()
+            cv_path = Path("data/cv.txt")
+
+            # Create backup of old CV
+            if cv_path.exists():
+                backup_path = Path("data/cv_backup.txt")
+                backup_path.write_text(cv_path.read_text(encoding="utf-8"), encoding="utf-8")
+
+            # Download and save new CV
+            import io
+            content = await file.download_as_bytearray()
+            cv_path.write_bytes(content)
+
+            # Re-index CV in ChromaDB
+            try:
+                from tools.index_cv import index_cv
+                index_cv()
+                chroma_status = "✅ ChromaDB'ye yeniden指数lendi."
+            except Exception as e:
+                logger.error(f"ChromaDB re-index error: {e}")
+                chroma_status = f"⚠️ ChromaDB指数leme hatası: {str(e)}"
+
+            # Get new CV stats
+            new_content = cv_path.read_text(encoding="utf-8")
+            char_count = len(new_content)
+            word_count = len(new_content.split())
+
+            response_text = (
+                "✅ *CV Güncellendi!*\n\n"
+                f"📁 Dosya: `{document.file_name}`\n"
+                f"📝 Karakter: `{char_count}`\n"
+                f"📊 Kelime: `{word_count}`\n\n"
+                f"{chroma_status}\n\n"
+                f"💾 Yedek: `data/cv_backup.txt`"
+            )
+
+            await update.message.reply_text(response_text, parse_mode="Markdown")
+
+        except Exception as e:
+            logger.error(f"Error in /update_cv command: {e}")
+            await update.message.reply_text(f"❌ CV güncellenemedi: {str(e)}")
+
+    async def add_info_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """
+        /add_info command — Append new information to CV.
+
+        Usage: /add_info Yeni bir proje: X projesinde yaptım...
+        """
+        if not self._is_admin(update):
+            await update.message.reply_text(
+                "⛔ Bu komutu kullanma yetkiniz yok."
+            )
+            return
+
+        if not context.args or len(" ".join(context.args).strip()) == 0:
+            await update.message.reply_text(
+                "ℹ️ Kullanım: /add_info <metin>\n\n"
+                "Örnek: /add_info Yeni sertifika: AWS Solutions Architect"
+            )
+            return
+
+        new_info = " ".join(context.args)
+        cv_path = Path("data/cv.txt")
+
+        if not cv_path.exists():
+            await update.message.reply_text("❌ CV dosyası bulunamadı.")
+            return
+
+        try:
+            # Read current CV
+            current_content = cv_path.read_text(encoding="utf-8")
+
+            # Create backup
+            backup_path = Path("data/cv_backup.txt")
+            backup_path.write_text(current_content, encoding="utf-8")
+
+            # Append new info
+            updated_content = current_content.rstrip() + "\n\n" + new_info
+
+            # Save updated CV
+            cv_path.write_text(updated_content, encoding="utf-8")
+
+            # Re-index CV in ChromaDB
+            try:
+                from tools.index_cv import index_cv
+                index_cv()
+                chroma_status = "\n✅ ChromaDB'ye yeniden指数lendi."
+            except Exception as e:
+                logger.error(f"ChromaDB re-index error: {e}")
+                chroma_status = f"\n⚠️ ChromaDB指数leme hatası: {str(e)}"
+
+            await update.message.reply_text(
+                f"✅ *CV'ye Bilgi Eklendi*\n\n"
+                f"Eklenen bilgi:\n`{new_info[:200]}{'...' if len(new_info) > 200 else ''}`\n"
+                f"Yeni CV uzunluğu: `{len(updated_content)}` karakter{chroma_status}",
+                parse_mode="Markdown"
+            )
+
+        except Exception as e:
+            logger.error(f"Error in /add_info command: {e}")
+            await update.message.reply_text(f"❌ Bilgi eklenemedi: {str(e)}")
+
+    async def remove_info_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """
+        /remove_info command — Remove specific line or text from CV.
+
+        Usage: /remove_info <aranan_metin>
+        Removes lines containing the searched text.
+        """
+        if not self._is_admin(update):
+            await update.message.reply_text(
+                "⛔ Bu komutu kullanma yetkiniz yok."
+            )
+            return
+
+        if not context.args or len(" ".join(context.args).strip()) == 0:
+            await update.message.reply_text(
+                "ℹ️ Kullanım: /remove_info <aranan_metin>\n\n"
+                "Örnek: /remove_info Eski proje\n\n"
+                "Bu komut, aranan metni içeren satırları siler."
+            )
+            return
+
+        search_text = " ".join(context.args).lower()
+        cv_path = Path("data/cv.txt")
+
+        if not cv_path.exists():
+            await update.message.reply_text("❌ CV dosyası bulunamadı.")
+            return
+
+        try:
+            # Read current CV
+            current_content = cv_path.read_text(encoding="utf-8")
+            lines = current_content.split('\n')
+
+            # Find and remove lines containing search text
+            original_count = len(lines)
+            filtered_lines = [line for line in lines if search_text not in line.lower()]
+            removed_count = original_count - len(filtered_lines)
+
+            if removed_count == 0:
+                await update.message.reply_text(
+                    f"⚠️ '{search_text}' içeren satır bulunamadı."
+                )
+                return
+
+            # Create backup
+            backup_path = Path("data/cv_backup.txt")
+            backup_path.write_text(current_content, encoding="utf-8")
+
+            # Save updated CV
+            updated_content = '\n'.join(filtered_lines)
+            cv_path.write_text(updated_content, encoding="utf-8")
+
+            # Re-index CV in ChromaDB
+            try:
+                from tools.index_cv import index_cv
+                index_cv()
+                chroma_status = "\n✅ ChromaDB'ye yeniden指数lendi."
+            except Exception as e:
+                logger.error(f"ChromaDB re-index error: {e}")
+                chroma_status = f"\n⚠️ ChromaDB指数leme hatası: {str(e)}"
+
+            await update.message.reply_text(
+                f"✅ *CV'den Bilgi Silindi*\n\n"
+                f"Aranan: `{search_text}`\n"
+                f"Silinen satır: `{removed_count}`\n"
+                f"Yeni CV uzunluğu: `{len(updated_content)}` karakter{chroma_status}",
+                parse_mode="Markdown"
+            )
+
+        except Exception as e:
+            logger.error(f"Error in /remove_info command: {e}")
+            await update.message.reply_text(f"❌ Bilgi silinemedi: {str(e)}")
 
     async def _generate_with_revision_loop(
         self,
@@ -502,6 +714,9 @@ class CareerAssistantBot:
         application.add_handler(CommandHandler("reply", self.reply_command))
         application.add_handler(CommandHandler("show_cv", self.show_cv_command))
         application.add_handler(CommandHandler("status", self.status_command))
+        application.add_handler(CommandHandler("update_cv", self.update_cv_command))
+        application.add_handler(CommandHandler("add_info", self.add_info_command))
+        application.add_handler(CommandHandler("remove_info", self.remove_info_command))
 
         # Message handler for employer messages
         # Filters out commands and handles everything else
@@ -529,6 +744,9 @@ class CareerAssistantBot:
             ("status", "Bot durumunu göster"),
             ("show_cv", "CV'yi görüntüle"),
             ("reply", "Casual→Professional dönüşüm"),
+            ("update_cv", "CV dosyasını güncelle"),
+            ("add_info", "CV'ye bilgi ekle"),
+            ("remove_info", "CV'den bilgi sil"),
         ]
 
         try:
