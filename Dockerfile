@@ -16,6 +16,7 @@ COPY . .
 # ChromaDB data dizini için env var
 ENV CHROMADB_PERSIST_DIR=./data/chromadb
 
-# Komut (override edilecek)
-# Not: Bot henüz yok, container'ı çalışır tutmak için sleep
-CMD ["python", "-c", "import time; time.sleep(3600)"]
+COPY start.sh .
+RUN chmod +x start.sh
+
+CMD ["./start.sh"]
